@@ -8,7 +8,8 @@ include { MCSTAGING_MACSIMA2MC       } from '../modules/nf-core/mcstaging/macsim
 include { ASHLAR                     } from '../modules/nf-core/ashlar/main'
 include { BACKSUB                    } from '../modules/nf-core/backsub/main'
 include { STAINSEGMY                 } from '../modules/qbic/stainsegmy/main'
-include { CELLPOSE                    } from '../modules/nf-core/cellpose/main'
+include { CELLPOSE3                  } from '../modules/local/cellpose3/main'
+include { CELLPOSE                   } from '../modules/nf-core/cellpose/main'
 include { RAMI2D_REGISTER            } from '../modules/local/rami2d/register/main'
 include { RAMI2D_TRANSFORM           } from '../modules/local/rami2d/transform/main'
 include { paramsSummaryMap           } from 'plugin/nf-schema'
@@ -126,7 +127,11 @@ workflow SPATIALLATTICE {
                 // Parse: rack-01-well-C01-roi-001-exp-1
                 def parts = acq_name.split('-')
                 log.info "acq_name parts: ${parts}"
-                def exposure = parts[7]
+                // Derive the exposure from the 'exp-<value>' token instead of a
+                // hard-coded index, so varying acquisition-group name formats
+                // (e.g. the stub's 'well-rack-roi-exp') do not break parsing.
+                def exp_idx = parts.findIndexOf { it == 'exp' }
+                def exposure = (exp_idx >= 0 && exp_idx + 1 < parts.size()) ? parts[exp_idx + 1] : parts[-1]
 
                 // Get all ome.tif files from the raw subdirectory
                 def raw_dir = acq_path.resolve('raw')
@@ -178,8 +183,31 @@ workflow SPATIALLATTICE {
     //nuclei segmentation with cellpose
     //TODO: test this cellpsoe 4
     // TODO potentailly add cellpose3
-    if (params.cellpose) {
-        CELLPOSE(ch_input.macsima.map { meta, raw_images -> [meta, raw_images] }, params.cellpose_model)
+    if (params.cellpose3) {
+        
+        if (params.cellpose3_custom_model) {
+            ch_cellpose3_model = channel.fromPath(params.cellpose3_custom_model, checkIfExists: true)
+        }
+        else {
+            // Pretrained model names (e.g. 'nuclei') are identifiers, not file paths.
+            // They are passed to cellpose via ext.args in conf/modules.config, so no
+            // model file needs to be staged here.
+            ch_cellpose3_model = channel.value([])
+        }
+        CELLPOSE3(ASHLAR.out.tif, ch_cellpose3_model)
+    }
+    if (params.cellpose_sam) {
+        if (params.cellpose_sam_custom_model) {
+            ch_cellpose_sam_model = channel.fromPath(params.cellpose_sam_custom_model, checkIfExists: true)
+        }
+        else {
+            // Pretrained model names (e.g. 'cpsam_v2') are identifiers, not file paths.
+            // They are passed to cellpose via ext.args in conf/modules.config, so no
+            // model file needs to be staged here.
+            ch_cellpose_sam_model = channel.value([])
+        }
+        CELLPOSE(ASHLAR.out.tif, ch_cellpose_sam_model)
+
     }
 
     // segmentation h&E
