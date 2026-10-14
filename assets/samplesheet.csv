@@ -1,3 +1,2 @@
-sample,fastq_1,fastq_2
-SAMPLE_PAIRED_END,/path/to/fastq/files/AEG588A1_S1_L002_R1_001.fastq.gz,/path/to/fastq/files/AEG588A1_S1_L002_R2_001.fastq.gz
-SAMPLE_SINGLE_END,/path/to/fastq/files/AEG588A4_S4_L003_R1_001.fastq.gz,
+experiment,sample,rack,well,roi,raw_images_ROI,HnE_ROI
+SAMPLE_1,test,01,C01,001,/home/ubuntu/Caro/CRC_study/EXP_20241031_CRC2024_CRC027_CRC037/20241031_PatientsCRC027CRC037_2024-10-31_12-41-03/RawData/R1/A1/ROI1,/home/ubuntu/Caro/hne_crop/20241031_CRC027_crop.ome.tif

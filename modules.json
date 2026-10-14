@@ -5,20 +5,55 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
-                    "fastqc": {
+                    "ashlar": {
                         "branch": "master",
-                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["modules"]
+                    },
+                    "backsub": {
+                        "branch": "master",
+                        "git_sha": "7a22732d2e89775b51eefdf647d790f2b1fea862",
+                        "installed_by": ["modules"]
+                    },
+                    "cellpose": {
+                        "branch": "master",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["modules"]
+                    },
+                    "mcstaging/macsima2mc": {
+                        "branch": "master",
+                        "git_sha": "c565f1b27c06a1e8b726e2a646d4c822ae3b514a",
                         "installed_by": ["modules"]
                     },
                     "multiqc": {
                         "branch": "master",
-                        "git_sha": "af27af1be706e6a2bb8fe454175b0cdf77f47b49",
+                        "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",
                         "installed_by": ["modules"]
+                    },
+                    "stainwarpy/extractchannel": {
+                        "branch": "master",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["tif_registration_stainwarpy"]
+                    },
+                    "stainwarpy/register": {
+                        "branch": "master",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["tif_registration_stainwarpy"]
+                    },
+                    "stainwarpy/transformsegmask": {
+                        "branch": "master",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["tif_registration_stainwarpy"]
                     }
                 }
             },
             "subworkflows": {
                 "nf-core": {
+                    "tif_registration_stainwarpy": {
+                        "branch": "master",
+                        "git_sha": "abfb5c0d2bac60140c23dfc6f8a5d2ef529adc1c",
+                        "installed_by": ["subworkflows"]
+                    },
                     "utils_nextflow_pipeline": {
                         "branch": "master",
                         "git_sha": "05954dab2ff481bcb999f24455da29a5828af08d",
@@ -26,13 +61,24 @@
                     },
                     "utils_nfcore_pipeline": {
                         "branch": "master",
-                        "git_sha": "271e7fc14eb1320364416d996fb077421f3faed2",
+                        "git_sha": "a3fb7351b1fdb2b1de282b765816bbea190e86a8",
                         "installed_by": ["subworkflows"]
                     },
                     "utils_nfschema_plugin": {
                         "branch": "master",
-                        "git_sha": "4b406a74dc0449c0401ed87d5bfff4252fd277fd",
+                        "git_sha": "fdc08b8b1ae74f56686ce21f7ea11ad11990ce57",
                         "installed_by": ["subworkflows"]
+                    }
+                }
+            }
+        },
+        "https://github.com/qbic-pipelines/nextflow-modules.git": {
+            "modules": {
+                "qbic": {
+                    "stainsegmy": {
+                        "branch": "main",
+                        "git_sha": "ec045d7f6785d597c1ab524fddaacce50b678b45",
+                        "installed_by": ["modules"]
                     }
                 }
             }
