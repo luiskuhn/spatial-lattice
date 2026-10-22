@@ -13,7 +13,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [macsima2mc](#macsima2mc) - Stage raw MACSima tiles into the MCMICRO format
 - [ASHLAR](#ashlar) - Stitch and register the multiplexed images
 - [BackSub](#backsub) - Subtract background signal (optional)
-- [Cellpose](#cellpose) - Nuclei segmentation (optional)
+- [MACSima segmentation](#macsima-segmentation) - Segment macsima images
 - [StainSegMy](#stainsegmy) - H&E tissue segmentation (optional)
 - [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
 - [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
@@ -61,17 +61,22 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 [BackSub](https://github.com/SchapiroLabor/Background_subtraction) performs pixel-by-pixel channel subtraction to remove background signal from the stitched and registered images. This step is optional and only runs when `--background_subtraction` is set (enabled by default).
 
-### Cellpose
+### MACSima segmentation
 
 <details markdown="1">
 <summary>Output files</summary>
 
-- `cellpose/`
-  - `*.ome.tif`: Nuclei segmentation masks overlaid on the input image.
+- `segmentation/cellpose3/<experiment>/<sample>/`
+  - `*_cp_masks.tif`: Labelled segmentation masks from Cellpose 3.
+  - `*_flows.tif`: Cellpose flows (only with `--cellpose3_save_flows`).
+- `segmentation/cellpose4/<experiment>/<sample>/<id>/`
+  - `*_cp_masks.tif`: Labelled segmentation masks from Cellpose 4 (Cellpose-SAM).
+- `segmentation/mesmer/<experiment>/<sample>/`
+  - `*_mesmer_mask.tif`: Labelled segmentation masks from [Mesmer](https://github.com/vanvalenlab/deepcell-tf).
 
 </details>
 
-[Cellpose](https://github.com/MouseLand/cellpose) performs nuclei segmentation on the MACSima images. This step is optional and only runs when `--cellpose` is set (disabled by default). The segmentation model can be selected with the `--cellpose_model` parameter (default `cyto3`).
+The stitched MACSima image (or the background-subtracted image if `--background_subtraction` is set) is segmented with the tools selected via `--segmentation`, a comma-separated list of `cellpose3`, `cellpose4` and `mesmer` (default: `cellpose4`). Several tools can be run in parallel, e.g. `--segmentation cellpose4,mesmer`.
 
 ### StainSegMy
 

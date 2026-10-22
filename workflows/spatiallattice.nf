@@ -8,12 +8,11 @@ include { MCSTAGING_MACSIMA2MC       } from '../modules/nf-core/mcstaging/macsim
 include { ASHLAR                     } from '../modules/nf-core/ashlar/main'
 include { BACKSUB                    } from '../modules/nf-core/backsub/main'
 include { STAINSEGMY                 } from '../modules/qbic/stainsegmy/main'
-include { CELLPOSE3                  } from '../modules/local/cellpose3/main'
-include { CELLPOSE                   } from '../modules/nf-core/cellpose/main'
 include { RAMI2D_REGISTER            } from '../modules/local/rami2d/register/main'
 include { RAMI2D_TRANSFORM           } from '../modules/local/rami2d/transform/main'
 include { paramsSummaryMap           } from 'plugin/nf-schema'
 include { TIF_REGISTRATION_STAINWARPY} from '../subworkflows/local/tif_registration_stainwarpy'
+include { MACSIMA_SEGMENTATION       } from '../subworkflows/local/macsima_segmentation'
 include { paramsSummaryMultiqc       } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML     } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText     } from '../subworkflows/local/utils_nfcore_spatiallattice_pipeline'
@@ -178,36 +177,21 @@ workflow SPATIALLATTICE {
             }
 
         BACKSUB(ch_backsub_in.images, ch_backsub_in.markers)
+
+        // segment the background subtracted image
+        ch_segmentation_in = BACKSUB.out.backsub_tif
+    }
+    else {
+        ch_segmentation_in = ASHLAR.out.tif
     }
 
-    //nuclei segmentation with cellpose
-    //TODO: test this cellpsoe 4
-    // TODO potentailly add cellpose3
-    if (params.cellpose3) {
-        
-        if (params.cellpose3_custom_model) {
-            ch_cellpose3_model = channel.fromPath(params.cellpose3_custom_model, checkIfExists: true)
-        }
-        else {
-            // Pretrained model names (e.g. 'nuclei') are identifiers, not file paths.
-            // They are passed to cellpose via ext.args in conf/modules.config, so no
-            // model file needs to be staged here.
-            ch_cellpose3_model = channel.value([])
-        }
-        CELLPOSE3(ASHLAR.out.tif, ch_cellpose3_model)
-    }
-    if (params.cellpose_sam) {
-        if (params.cellpose_sam_custom_model) {
-            ch_cellpose_sam_model = channel.fromPath(params.cellpose_sam_custom_model, checkIfExists: true)
-        }
-        else {
-            // Pretrained model names (e.g. 'cpsam_v2') are identifiers, not file paths.
-            // They are passed to cellpose via ext.args in conf/modules.config, so no
-            // model file needs to be staged here.
-            ch_cellpose_sam_model = channel.value([])
-        }
-        CELLPOSE(ASHLAR.out.tif, ch_cellpose_sam_model)
+    // segmentation of the multiplexed image with the tool(s) selected via --segmentation
+    segmentation_methods = params.segmentation
+        ? params.segmentation.tokenize(',').collect { method -> method.trim() }.unique()
+        : []
 
+    if (segmentation_methods) {
+        MACSIMA_SEGMENTATION(ch_segmentation_in, segmentation_methods)
     }
 
     // segmentation h&E

@@ -1,4 +1,4 @@
-name: "cellpose"
+name: "cellpose3"
 description: cellpose segments cells in images
 keywords:
   - segmentation
@@ -49,11 +49,27 @@ output:
           type: file
           description: cell flow output from cellpose
           pattern: "*.{tif}"
-  - versions:
-      - versions.yml:
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+  - versions_cellpose:
+      - - ${task.process}:
+            type: string
+            description: The name of the process
+        - cellpose:
+            type: string
+            description: The name of the tool
+        - "cellpose --version | sed -n 's/cellpose version:[[:space:]]*//p' | tr -d '[:space:]'":
+            type: eval
+            description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - cellpose:
+          type: string
+          description: The name of the tool
+      - "cellpose --version | sed -n 's/cellpose version:[[:space:]]*//p' | tr -d '[:space:]'":
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
   - "@josenimo"
   - "@FloWuenne"

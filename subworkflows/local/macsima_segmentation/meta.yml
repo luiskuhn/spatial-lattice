@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "macsima_segmentation"
+
+description: Segment stitched MACSima images with one or more segmentation tools (Cellpose 3, Cellpose 4 / Cellpose-SAM, Mesmer)
+keywords:
+  - segmentation
+  - imaging
+  - multiplexed
+  - cellpose
+  - cellpose3
+  - mesmer
+
+components:
+  - cellpose
+  - cellpose3
+  - deepcell/mesmer
+
+input:
+  - ch_image:
+      type: file
+      description: |
+        Channel containing the stitched (and optionally background-subtracted) multichannel image
+        Structure: [ val(meta), path(ome.tif) ]
+      pattern: "*.{tif,ome.tif,tiff,ome.tiff}"
+  - val_methods:
+      type: list
+      description: |
+        List of segmentation tools to run. Any combination of 'cellpose3', 'cellpose4' and 'mesmer'.
+
+output:
+  - masks:
+      type: file
+      description: |
+        Channel containing the segmentation masks of all selected tools.
+        The tool is stored in meta.segmentation ('cellpose3', 'cellpose4' or 'mesmer').
+        Structure: [ val(meta), path(tif) ]
+      pattern: "*.{tif,tiff}"
+authors:
+  - "@CaroAMN"
+maintainers:
+  - "@CaroAMN"

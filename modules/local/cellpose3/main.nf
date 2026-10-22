@@ -1,6 +1,6 @@
 process CELLPOSE3 {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     container "docker.io/biocontainers/cellpose:3.0.1_cv1"
 
@@ -11,7 +11,7 @@ process CELLPOSE3 {
     output:
     tuple val(meta), path("*masks.tif") ,   emit: mask
     tuple val(meta), path("*flows.tif") ,   emit: flows, optional: true
-    path "versions.yml"                 ,   emit: versions
+    tuple val("${task.process}"), val('cellpose'), eval("cellpose --version | sed -n 's/cellpose version:[[:space:]]*//p' | tr -d '[:space:]'"), topic: versions, emit: versions_cellpose
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,16 +29,12 @@ process CELLPOSE3 {
     export MKL_NUM_THREADS=${task.cpus}
     export HOME=\$PWD
     export NUMBA_CACHE_DIR=\$PWD
+
     cellpose \\
         --image_path $image \\
         --save_tif \\
         $model_command \\
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cellpose: \$(cellpose --version | awk 'NR==2 {print \$3}')
-    END_VERSIONS
     """
     stub:
     // Exit if running this module with -profile conda / -profile mamba
@@ -50,10 +46,5 @@ process CELLPOSE3 {
     def base = name.lastIndexOf('.') != -1 ? name[0..name.lastIndexOf('.') - 1] : name
     """
     touch ${base}_cp_masks.tif
-
-        cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cellpose: \$(cellpose --version | awk 'NR==2 {print \$3}')
-    END_VERSIONS
     """
 }

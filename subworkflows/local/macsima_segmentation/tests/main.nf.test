@@ -1,0 +1,129 @@
+nextflow_workflow {
+
+    name "Test Subworkflow MACSIMA_SEGMENTATION"
+    script "../main.nf"
+    workflow "MACSIMA_SEGMENTATION"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "subworkflows/macsima_segmentation"
+    tag "cellpose"
+    tag "cellpose3"
+    tag "deepcell/mesmer"
+
+
+    test("cellpose3 - stub") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = channel.of([
+                    [ id:'test' ],
+                    file(params.modules_testdata_base_path + 'imaging/segmentation/cycif_tonsil_registered.ome.tif', checkIfExists: true)
+                ])
+                input[1] = [ 'cellpose3' ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.masks.size() == 1 },
+                { assert workflow.out.masks.collect { meta, mask -> meta.segmentation } == [ 'cellpose3' ] },
+                { assert snapshot(workflow.out.masks).match() }
+            )
+        }
+    }
+
+    test("cellpose4 - stub") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = channel.of([
+                    [ id:'test' ],
+                    file(params.modules_testdata_base_path + 'imaging/segmentation/cycif_tonsil_registered.ome.tif', checkIfExists: true)
+                ])
+                input[1] = [ 'cellpose4' ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.masks.size() == 1 },
+                { assert workflow.out.masks.collect { meta, mask -> meta.segmentation } == [ 'cellpose4' ] },
+                { assert snapshot(workflow.out.masks).match() }
+            )
+        }
+    }
+
+    test("mesmer - stub") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = channel.of([
+                    [ id:'test' ],
+                    file(params.modules_testdata_base_path + 'imaging/segmentation/cycif_tonsil_registered.ome.tif', checkIfExists: true)
+                ])
+                input[1] = [ 'mesmer' ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.masks.size() == 1 },
+                { assert workflow.out.masks.collect { meta, mask -> meta.segmentation } == [ 'mesmer' ] },
+                { assert snapshot(workflow.out.masks).match() }
+            )
+        }
+    }
+    // stub tests only because the modules itself have their tests.
+    // the stub tests are sufficient to test the subworkflow and the integration of the modules.
+    test("all tools, two images - stub") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = channel.of(
+                    [
+                        [ id:'test1' ],
+                        file(params.modules_testdata_base_path + 'imaging/segmentation/cycif_tonsil_registered.ome.tif', checkIfExists: true)
+                    ],
+                    [
+                        [ id:'test2' ],
+                        file(params.modules_testdata_base_path + 'imaging/segmentation/cycif_tonsil_registered.ome.tif', checkIfExists: true)
+                    ]
+                )
+                input[1] = [ 'cellpose3', 'cellpose4', 'mesmer' ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                // 2 images x 3 tools
+                { assert workflow.out.masks.size() == 6 },
+                { assert workflow.out.masks.collect { meta, mask -> meta.segmentation }.toSet() == [ 'cellpose3', 'cellpose4', 'mesmer' ].toSet() },
+                { assert snapshot(
+                    workflow.out.masks.collect { meta, mask -> [ meta.id, meta.segmentation, file(mask.toString()).name ] }.sort { it.toString() }
+                ).match() }
+            )
+        }
+    }
+}
