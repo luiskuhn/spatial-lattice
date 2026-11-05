@@ -90,3 +90,23 @@ with `--help`; a new full end-to-end processing run has not been validated.
 
 After changing the container, rebuild it and omit `-resume` for the export test:
 the mutable development tag alone does not invalidate Nextflow's cache.
+
+## Container verification and inherited registration modules
+
+INTEGRATED_OMEZARR is the only new executable process in BUILD_INTEGRATED_OMEZARR.
+Its Dockerfile and locked Python dependencies are in modules/local/integrated_omezarr.
+The subworkflow orchestrates this containerized process; it does not require another image.
+The image `quay.io/spatial-lattice-omezarr:dev` is built locally on solidfox, not published to Quay.
+Docker CLI smoke testing and NGFF validation of the example artifact passed.
+
+```bash
+docker run --rm -e XDG_CACHE_HOME=/tmp/ngff-cache \\
+  quay.io/spatial-lattice-omezarr:dev integrate_omezarr.py --help
+```
+
+RAMI2D was inherited from commit [fafc698](https://github.com/luiskuhn/spatial-lattice/commit/fafc698dd3f1cb9ba45a756eff8ac742e63367c2)
+(CaroAMN, 2026-09-21), which also added Stainwarpy.
+RAMI2D_REGISTER is optional and disabled by default. RAMI2D_TRANSFORM is imported but
+not invoked by the main workflow. Both already declare a Seqera container.
+Neither is part of the tested OME-Zarr integration path; the grey branch in the diagram
+indicates inherited functionality, not a newly implemented or validated registration route.
