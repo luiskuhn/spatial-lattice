@@ -1,17 +1,16 @@
 nextflow_process {
 
-    name "Test Process CELLPOSE"
+    name "Test Process CELLPOSE3"
     script "../main.nf"
-    process "CELLPOSE"
+    process "CELLPOSE3"
 
     tag "modules"
-    tag "modules_nfcore"
-    tag "cellpose"
+    tag "modules_local"
+    tag "cellpose3"
 
-    test("cellpose - with flows, no model") {
+    test("cellpose3 - no model") {
 
         when {
-            config "./nextflow_wflows.config"
             process {
                 """
                 input[0] = [
@@ -26,16 +25,17 @@ nextflow_process {
         then {
             assertAll (
                 { assert process.success },
-                { assert snapshot(process.out.mask).match("mask") },
-                { assert snapshot(process.out.flows).match("flows") },
-                { assert snapshot(process.out.versions).match("versions") }
+                { assert snapshot(
+                    process.out.mask,
+                    process.out.findAll { key, val -> key.startsWith('versions') }
+                ).match() }
             )
         }
 
     }
 
 
-    test("cellpose - stub") {
+    test("cellpose3 - stub") {
 
         options "-stub"
 

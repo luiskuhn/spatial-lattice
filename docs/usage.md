@@ -62,6 +62,38 @@ EXP_1,R1,A1,ROI2,/path/to/another/raw/roi/folder,/path/to/another/hne/roi/file
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
 
+## MACSima segmentation
+
+The segmentation tools are selected with `--segmentation`, a comma-separated list of one or more of:
+
+| Tool        | Description               | Tool-specific parameters                                                                                                                                                                                     |
+| ----------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cellpose3` | Cellpose 3                | `--cellpose3_pretrained_model`, `--cellpose3_custom_model`, `--cellpose3_diameter`, `--cellpose3_flow_threshold`, `--cellpose3_cellprob_threshold`, `--cellpose3_exclude_on_edges`, ...                      |
+| `cellpose4` | Cellpose 4 (Cellpose-SAM) | `--cellpose4_pretrained_model`, `--cellpose4_custom_model`, `--cellpose4_diameter`, `--cellpose4_flow_threshold`, `--cellpose4_cellprob_threshold`, `--cellpose4_exclude_on_edges`, `--cellpose4_save_flows` |
+| `mesmer`    | DeepCell Mesmer           | `--mesmer_image_mpp`, `--mesmer_compartment`, `--mesmer_nuclear_channel`, `--mesmer_membrane_channel`                                                                                                        |
+
+```bash
+# run Cellpose 4 and Mesmer
+nextflow run nf-core/spatiallattice --input ./samplesheet.csv --outdir ./results -profile docker --segmentation cellpose4,mesmer
+
+# skip segmentation
+nextflow run nf-core/spatiallattice --input ./samplesheet.csv --outdir ./results -profile docker --segmentation ''
+```
+
+For Cellpose, the model is selected as follows:
+
+| Custom model (`--cellpose*_custom_model`) | Pretrained model (`--cellpose*_pretrained_model`) | Model used                                   |
+| ----------------------------------------- | ------------------------------------------------- | -------------------------------------------- |
+| set                                       | ignored                                           | the custom model file                        |
+| not set                                   | set (default: `nuclei` / `cpsam_v2`)              | the named pretrained model                   |
+| not set                                   | `none`                                            | the built-in default of the Cellpose version |
+
+> [!NOTE]
+> If `--background_subtraction` is enabled, segmentation runs on the background-subtracted image, which no longer contains the background channels. Channel indices (e.g. `--cellpose3_chan`, `--mesmer_nuclear_channel`) must then refer to the channel order of the background-subtracted image.
+
+> [!NOTE]
+> Cellpose 4 is much faster on a GPU. Use `-profile gpu` to request a GPU (see the `process_gpu` label in `conf/base.config`); without it, Cellpose 4 runs on the CPU, which can be very slow.
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:

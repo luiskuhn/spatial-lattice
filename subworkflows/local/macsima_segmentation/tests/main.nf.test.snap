@@ -1,0 +1,149 @@
+{
+    "mesmer - stub": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "segmentation": "mesmer"
+                    },
+                    "test_mesmer_mask.tif:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-21T14:23:58.982072009",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cellpose3 - stub": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "segmentation": "cellpose3"
+                    },
+                    "cycif_tonsil_registered.ome_cp_masks.tif:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-21T08:38:06.785003001",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cellpose4 - stub": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "segmentation": "cellpose4"
+                    },
+                    "cycif_tonsil_registered.ome_cp_masks.tif:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-21T08:47:19.332934675",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cellpose3": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "segmentation": "cellpose3"
+                    },
+                    [
+                        "cycif_tonsil_registered.ome_cp_masks.tif"
+                    ]
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-21T13:53:45.011031431",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "cellpose4": {
+        "content": [
+            [
+                
+            ]
+        ],
+        "timestamp": "2026-10-21T13:58:59.377930754",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "mesmer": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "segmentation": "mesmer"
+                    },
+                    [
+                        "test_mesmer_mask.tif"
+                    ]
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-21T14:16:34.806310684",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "all tools, two images - stub": {
+        "content": [
+            [
+                [
+                    "test1",
+                    "cellpose3",
+                    "cycif_tonsil_registered.ome_cp_masks.tif"
+                ],
+                [
+                    "test1",
+                    "cellpose4",
+                    "cycif_tonsil_registered.ome_cp_masks.tif"
+                ],
+                [
+                    "test1",
+                    "mesmer",
+                    "test1_mesmer_mask.tif"
+                ],
+                [
+                    "test2",
+                    "cellpose3",
+                    "cycif_tonsil_registered.ome_cp_masks.tif"
+                ],
+                [
+                    "test2",
+                    "cellpose4",
+                    "cycif_tonsil_registered.ome_cp_masks.tif"
+                ],
+                [
+                    "test2",
+                    "mesmer",
+                    "test2_mesmer_mask.tif"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-21T14:25:25.340162691",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
