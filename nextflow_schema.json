@@ -196,6 +196,11 @@
                     "fa_icon": "fas fa-project-diagram",
                     "help_text": "0-based channel index of the membrane marker in the multichannel image. Required for `whole-cell` or `both` compartments."
                 },
+                "integrated_omezarr": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Export a calibrated integrated OME-Zarr scene."
+                },
                 "stainwarpy": {
                     "type": "boolean",
                     "description": "Run the StainWarPy registration step to register the H&E image (moving) to the immunofluorescence image (fixed).",

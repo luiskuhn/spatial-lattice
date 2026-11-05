@@ -61,6 +61,7 @@ workflow TIF_REGISTRATION_STAINWARPY {
 
 
     emit:
+    transform = STAINWARPY_REGISTER.out.tform_map
     transformed_image   = STAINWARPY_REGISTER.out.reg_image                     // channel: [ val(meta), *_transformed_image.ome.tif             ]
     metrics             = STAINWARPY_REGISTER.out.reg_metrics_tform             // channel: [ val(meta), *_registration_metrics_tform_map.json   ]
     transformed_segmask = ch_transformed_segmask                                // channel: [ val(meta), *_transformed_segmentation_mask.ome.tif ]
