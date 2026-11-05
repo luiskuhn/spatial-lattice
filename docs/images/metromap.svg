@@ -1,9 +1,130 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img"><title>Spatial Lattice pipeline metro map</title><rect width="1200" height="720" fill="#fafaf7"/><style>text{font-family:Arial,sans-serif;fill:#263544;font-size:18px}.route{fill:none;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.station{fill:#fafaf7;stroke:#263544;stroke-width:3}.small{font-size:14px;fill:#53616a}</style><text x="55" y="55" style="font-size:32px;font-weight:bold">SPATIAL LATTICE</text><text x="55" y="85" class="small">Pipeline metro map · circles mark processes · double rings mark interchanges</text>
-<path class="route" stroke="#168b91" d="M80 210H1080V530H950"/>
-<path class="route" stroke="#a758b2" d="M430 210V270L510 350H800L950 500V530"/>
-<path class="route" stroke="#e89b2c" d="M80 530H950"/>
-<path class="route" stroke="#e89b2c" d="M430 210V450L460 530"/>
-<path class="route" stroke="#e89b2c" stroke-dasharray="3 20" d="M250 530V620H610"/>
-<path class="route" stroke="#a758b2" stroke-dasharray="3 20" d="M650 350V290H850"/>
-<path class="route" stroke="#2b63ad" d="M950 530H1100"/>
-<circle class="station" cx="80" cy="210" r="9"/><text x="80" y="182" text-anchor="middle">Raw MACSima</text><circle class="station" cx="250" cy="210" r="9"/><text x="250" y="182" text-anchor="middle">macsima2mc</text><circle class="station" cx="430" cy="210" r="9"/><circle cx="430" cy="210" r="15" fill="none" stroke="#263544" stroke-width="2"/><text x="430" y="182" text-anchor="middle">ASHLAR</text><circle class="station" cx="590" cy="350" r="9"/><text x="590" y="322" text-anchor="middle">Cellpose</text><circle class="station" cx="850" cy="290" r="9"/><text x="850" y="265" text-anchor="middle">Mesmer</text><circle class="station" cx="80" cy="530" r="9"/><text x="80" y="502" text-anchor="middle">H&amp;E input</text><circle class="station" cx="250" cy="530" r="9"/><text x="250" y="502" text-anchor="middle">H&amp;E branch</text><circle class="station" cx="460" cy="530" r="9"/><circle cx="460" cy="530" r="15" fill="none" stroke="#263544" stroke-width="2"/><text x="460" y="570" text-anchor="middle">Stainwarpy</text><circle class="station" cx="610" cy="620" r="9"/><text x="610" y="658" text-anchor="middle">StainSegMy / RAMI2D</text><circle class="station" cx="950" cy="530" r="9"/><circle cx="950" cy="530" r="15" fill="none" stroke="#263544" stroke-width="2"/><text x="950" y="492" text-anchor="middle">OME-Zarr</text><circle class="station" cx="1100" cy="530" r="9"/><text x="1100" y="572" text-anchor="middle">MultiQC</text><text x="470" y="300" class="small">Optional BackSub</text><text x="590" y="385" class="small">3 / 4 · instance labels</text><text x="950" y="572" text-anchor="middle" class="small">Integrate + validate</text><text x="60" y="675" class="small">Teal: mosaic · Purple: segmentation · Amber: H&amp;E registration · Blue: reporting · Dashed: alternative / optional branches</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1480" viewBox="0 0 1800 1480" role="img" aria-labelledby="title desc"><title id="title">Spatial Lattice — pipeline metro map</title><desc id="desc">Geometric metro map of the current pipeline, with separate modules, subworkflows, optional routes and expanded subworkflow details.</desc><defs>
+<pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0H0V80M0 0L80 80" fill="none" stroke="#dbe5eb" stroke-width=".6"/></pattern>
+<marker id="arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L6 3.5L0 7Z" fill="context-stroke"/></marker>
+<g id="module"><path d="M-13 -8L0 -16L13 -8V8L0 16L-13 8Z M-13 -8L0 0L13 -8 M0 0V16" fill="none" stroke="currentColor" stroke-width="2.3"/></g>
+<g id="sub"><path d="M-16 -11H-5V0H-16Z M5 -11H16V0H5Z M-5 8H6V19H-5Z M-10 0V4H11V0 M0 4V8" fill="none" stroke="currentColor" stroke-width="2.3"/></g>
+</defs><rect width="1800" height="1480" fill="#f7fafb"/><rect width="1800" height="1480" fill="url(#grid)" opacity=".5"/>
+<style>text{font-family:Arial,sans-serif;fill:#183246}.head{font-weight:700;font-size:20px}.label{font-size:18px;font-weight:600}.small{font-size:15px;fill:#526879}.micro{font-size:13px;fill:#526879}.route{fill:none;stroke-width:9;stroke-linejoin:round;stroke-linecap:round}.thin{fill:none;stroke-width:3;stroke-linejoin:round}.halo{stroke:none}</style>
+<text x="65" y="65" class="head" text-anchor="start">SPATIAL LATTICE</text>
+<text x="65" y="108" class="label" text-anchor="start">A shared frame for multimodal tissue imaging</text>
+<text x="65" y="138" class="small" text-anchor="start">Pipeline metro map  /  forward-cycle  /  data flow runs left to right</text>
+<path d="M1550 60L1600 30L1650 60V120L1600 150L1550 120ZM1600 30V90L1650 120M1550 60L1600 90L1550 120" fill="none" stroke="#138b93" stroke-width="3"/>
+<path d="M110 250H600H1410V560" fill="none" stroke="#138b93" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M600 250V350L680 430H850H1260L1390 560H1410" fill="none" stroke="#8753b5" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M600 250L700 350H800L850 430" fill="none" stroke="#8753b5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<path d="M110 650H850H1300L1390 560H1410" fill="none" stroke="#d88b19" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M600 250H640V580L710 650H850" fill="none" stroke="#138b93" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M300 650V760H550H740L815 685" fill="none" stroke="#d88b19" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<path d="M200 650V880H850H1110" fill="none" stroke="#d88b19" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<path d="M640 580V820H790L850 880" fill="none" stroke="#138b93" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<path d="M1410 560H1630V880" fill="none" stroke="#1f9472" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M350 250V190H1510V510L1445 545" fill="none" stroke="#788a9b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<path d="M110 650V980H1510V615L1440 580" fill="none" stroke="#788a9b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<path d="M1190 1020H1720V880H1660" fill="none" stroke="#386bb1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<circle cx="110" cy="250" r="24" fill="#fff" stroke="#138b93" stroke-width="3"/>
+<use href="#module" transform="translate(110,248)" style="color:#138b93"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="110" y="202" class="label halo" text-anchor="middle">MACSima input</text><text x="110" y="202" class="label halo" text-anchor="middle">MACSima input</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="110" y="224" class="small halo" text-anchor="middle">raw ROI cycles</text><text x="110" y="224" class="small halo" text-anchor="middle">raw ROI cycles</text>
+<circle cx="350" cy="250" r="24" fill="#fff" stroke="#138b93" stroke-width="3"/>
+<use href="#module" transform="translate(350,248)" style="color:#138b93"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="350" y="302" class="label halo" text-anchor="middle">macsima2mc</text><text x="350" y="302" class="label halo" text-anchor="middle">macsima2mc</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="350" y="324" class="small halo" text-anchor="middle">staging + marker table</text><text x="350" y="324" class="small halo" text-anchor="middle">staging + marker table</text>
+<circle cx="600" cy="250" r="24" fill="#fff" stroke="#138b93" stroke-width="3"/>
+<use href="#module" transform="translate(600,248)" style="color:#138b93"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="600" y="202" class="label halo" text-anchor="middle">ASHLAR</text><text x="600" y="202" class="label halo" text-anchor="middle">ASHLAR</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="600" y="224" class="small halo" text-anchor="middle">stitched mosaic</text><text x="600" y="224" class="small halo" text-anchor="middle">stitched mosaic</text>
+<circle cx="600" cy="350" r="24" fill="#fff" stroke="#8753b5" stroke-width="3"/>
+<use href="#module" transform="translate(600,348)" style="color:#8753b5"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="600" y="402" class="label halo" text-anchor="middle">BackSub</text><text x="600" y="402" class="label halo" text-anchor="middle">BackSub</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="600" y="424" class="small halo" text-anchor="middle">optional</text><text x="600" y="424" class="small halo" text-anchor="middle">optional</text>
+<circle cx="850" cy="430" r="29" fill="#fff" stroke="#8753b5" stroke-width="3"/>
+<circle cx="850" cy="430" r="35" fill="none" stroke="#8753b5" stroke-width="2"/>
+<use href="#sub" transform="translate(850,428)" style="color:#8753b5"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="850" y="482" class="label halo" text-anchor="middle">MACSima segmentation</text><text x="850" y="482" class="label halo" text-anchor="middle">MACSima segmentation</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="850" y="504" class="small halo" text-anchor="middle">Cellpose 3 / 4 or Mesmer</text><text x="850" y="504" class="small halo" text-anchor="middle">Cellpose 3 / 4 or Mesmer</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1110" y="410" class="small halo" text-anchor="middle">selected Cellpose labels</text><text x="1110" y="410" class="small halo" text-anchor="middle">selected Cellpose labels</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1050" y="230" class="small halo" text-anchor="middle">original MACSima mosaic</text><text x="1050" y="230" class="small halo" text-anchor="middle">original MACSima mosaic</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="760" y="332" class="micro halo" text-anchor="middle">bypass BackSub</text><text x="760" y="332" class="micro halo" text-anchor="middle">bypass BackSub</text>
+<circle cx="110" cy="650" r="24" fill="#fff" stroke="#d88b19" stroke-width="3"/>
+<use href="#module" transform="translate(110,648)" style="color:#d88b19"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="110" y="602" class="label halo" text-anchor="middle">H&amp;E input</text><text x="110" y="602" class="label halo" text-anchor="middle">H&amp;E input</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="110" y="624" class="small halo" text-anchor="middle">matched image</text><text x="110" y="624" class="small halo" text-anchor="middle">matched image</text>
+<circle cx="550" cy="760" r="24" fill="#fff" stroke="#d88b19" stroke-width="3"/>
+<use href="#module" transform="translate(550,758)" style="color:#d88b19"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="550" y="812" class="label halo" text-anchor="middle">StainSegMy</text><text x="550" y="812" class="label halo" text-anchor="middle">StainSegMy</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="550" y="834" class="small halo" text-anchor="middle">optional H&amp;E mask</text><text x="550" y="834" class="small halo" text-anchor="middle">optional H&amp;E mask</text>
+<circle cx="850" cy="650" r="29" fill="#fff" stroke="#d88b19" stroke-width="3"/>
+<circle cx="850" cy="650" r="35" fill="none" stroke="#d88b19" stroke-width="2"/>
+<use href="#sub" transform="translate(850,648)" style="color:#d88b19"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="850" y="702" class="label halo" text-anchor="middle">Stainwarpy registration</text><text x="850" y="702" class="label halo" text-anchor="middle">Stainwarpy registration</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="850" y="724" class="small halo" text-anchor="middle">registered H&amp;E + transform + metrics</text><text x="850" y="724" class="small halo" text-anchor="middle">registered H&amp;E + transform + metrics</text>
+<circle cx="850" cy="880" r="24" fill="#fff" stroke="#d88b19" stroke-width="3"/>
+<use href="#module" transform="translate(850,878)" style="color:#d88b19"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="850" y="932" class="label halo" text-anchor="middle">RAMI2D register</text><text x="850" y="932" class="label halo" text-anchor="middle">RAMI2D register</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="850" y="954" class="small halo" text-anchor="middle">optional alternative</text><text x="850" y="954" class="small halo" text-anchor="middle">optional alternative</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1120" y="886" class="small halo" text-anchor="start">published separately</text><text x="1120" y="886" class="small halo" text-anchor="start">published separately</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1120" y="910" class="micro halo" text-anchor="start">not an OME-Zarr input</text><text x="1120" y="910" class="micro halo" text-anchor="start">not an OME-Zarr input</text>
+<circle cx="1410" cy="560" r="29" fill="#fff" stroke="#1f9472" stroke-width="3"/>
+<circle cx="1410" cy="560" r="35" fill="none" stroke="#1f9472" stroke-width="2"/>
+<use href="#sub" transform="translate(1410,558)" style="color:#1f9472"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1410" y="612" class="label halo" text-anchor="middle">Build integrated OME-Zarr</text><text x="1410" y="612" class="label halo" text-anchor="middle">Build integrated OME-Zarr</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1410" y="634" class="small halo" text-anchor="middle">optional · see detail C</text><text x="1410" y="634" class="small halo" text-anchor="middle">optional · see detail C</text>
+<circle cx="1630" cy="880" r="24" fill="#fff" stroke="#386bb1" stroke-width="3"/>
+<use href="#module" transform="translate(1630,878)" style="color:#386bb1"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1630" y="932" class="label halo" text-anchor="middle">MultiQC</text><text x="1630" y="932" class="label halo" text-anchor="middle">MultiQC</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1630" y="954" class="small halo" text-anchor="middle">export QC + run summaries</text><text x="1630" y="954" class="small halo" text-anchor="middle">export QC + run summaries</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1580" y="650" class="label halo" text-anchor="middle">.ome.zarr</text><text x="1580" y="650" class="label halo" text-anchor="middle">.ome.zarr</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1580" y="679" class="small halo" text-anchor="middle">artifact + validation</text><text x="1580" y="679" class="small halo" text-anchor="middle">artifact + validation</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1100" y="174" class="micro halo" text-anchor="middle">marker table / channel metadata</text><text x="1100" y="174" class="micro halo" text-anchor="middle">marker table / channel metadata</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="620" y="1003" class="micro halo" text-anchor="middle">native H&amp;E metadata / registration provenance</text><text x="620" y="1003" class="micro halo" text-anchor="middle">native H&amp;E metadata / registration provenance</text>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1300" y="1010" class="micro halo" text-anchor="middle">versions + run summaries</text><text x="1280" y="965" class="micro halo" text-anchor="middle">versions + run summaries</text>
+<rect x="60" y="1060" width="540" height="280" rx="16" fill="#fff" stroke="#ccdbe3"/><rect x="60" y="1060" width="6" height="280" rx="3" fill="#8753b5"/>
+<text x="84" y="1095" class="head" text-anchor="start">A / MACSIMA_SEGMENTATION</text>
+<rect x="630" y="1060" width="540" height="280" rx="16" fill="#fff" stroke="#ccdbe3"/><rect x="630" y="1060" width="6" height="280" rx="3" fill="#d88b19"/>
+<text x="654" y="1095" class="head" text-anchor="start">B / TIF_REGISTRATION_STAINWARPY</text>
+<rect x="1200" y="1060" width="540" height="280" rx="16" fill="#fff" stroke="#ccdbe3"/><rect x="1200" y="1060" width="6" height="280" rx="3" fill="#1f9472"/>
+<text x="1224" y="1095" class="head" text-anchor="start">C / BUILD_INTEGRATED_OMEZARR</text>
+<text x="85" y="1130" class="small" text-anchor="start">Same image → parallel selected modules</text>
+<circle cx="155" cy="1180" r="24" fill="#fff" stroke="#8753b5" stroke-width="3"/>
+<use href="#module" transform="translate(155,1178)" style="color:#8753b5"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="155" y="1232" class="label halo" text-anchor="middle">Cellpose 3</text><text x="155" y="1232" class="label halo" text-anchor="middle">Cellpose 3</text>
+<path d="M155 1152V1145" fill="none" stroke="#8753b5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="330" cy="1180" r="24" fill="#fff" stroke="#8753b5" stroke-width="3"/>
+<use href="#module" transform="translate(330,1178)" style="color:#8753b5"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="330" y="1232" class="label halo" text-anchor="middle">Cellpose 4</text><text x="330" y="1232" class="label halo" text-anchor="middle">Cellpose 4</text>
+<path d="M330 1152V1145" fill="none" stroke="#8753b5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="505" cy="1180" r="24" fill="#fff" stroke="#8753b5" stroke-width="3"/>
+<use href="#module" transform="translate(505,1178)" style="color:#8753b5"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="505" y="1232" class="label halo" text-anchor="middle">Mesmer</text><text x="505" y="1232" class="label halo" text-anchor="middle">Mesmer</text>
+<path d="M505 1152V1145" fill="none" stroke="#8753b5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M155 1145H505" fill="none" stroke="#8753b5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="85" y="1307" class="small" text-anchor="start">Exporter accepts exactly one Cellpose method.</text>
+<text x="655" y="1130" class="small" text-anchor="start">MACSima-fixed route used by the exporter</text>
+<path d="M715 1180H900" fill="none" stroke="#d88b19" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="715" cy="1180" r="24" fill="#fff" stroke="#d88b19" stroke-width="3"/>
+<use href="#module" transform="translate(715,1178)" style="color:#d88b19"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="715" y="1232" class="label halo" text-anchor="middle">Extract channel</text><text x="715" y="1232" class="label halo" text-anchor="middle">Extract channel</text>
+<circle cx="900" cy="1180" r="24" fill="#fff" stroke="#d88b19" stroke-width="3"/>
+<use href="#module" transform="translate(900,1178)" style="color:#d88b19"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="900" y="1232" class="label halo" text-anchor="middle">Register</text><text x="900" y="1232" class="label halo" text-anchor="middle">Register</text>
+<text x="655" y="1285" class="micro" text-anchor="start">Other fixed frame: bypass channel extraction.</text>
+<text x="655" y="1310" class="micro" text-anchor="start">Warp mask = TransformSegMask; requires an H&amp;E mask.</text>
+<text x="1225" y="1130" class="small" text-anchor="start">Mosaic + Cellpose labels + registered H&amp;E</text>
+<circle cx="1280" cy="1190" r="24" fill="#fff" stroke="#1f9472" stroke-width="3"/>
+<use href="#module" transform="translate(1280,1188)" style="color:#1f9472"/>
+<text style="stroke:#f7fafb;stroke-width:7px;stroke-linejoin:round;fill:#f7fafb" x="1280" y="1242" class="label halo" text-anchor="middle">Export</text><text x="1280" y="1242" class="label halo" text-anchor="middle">Export</text>
+<path d="M1310 1190H1450" fill="none" stroke="#1f9472" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1460" y="1188" class="small" text-anchor="start">Schema + grid validation</text>
+<text x="1460" y="1215" class="micro" text-anchor="start">inside export process</text>
+<text x="1225" y="1285" class="micro" text-anchor="start">Also consumes native H&amp;E, markers and transforms.</text>
+<text x="1225" y="1310" class="micro" text-anchor="start">Outputs: one OME-Zarr scene + MultiQC JSON.</text>
+<text x="65" y="1390" class="head" text-anchor="start">LEGEND</text>
+<use href="#module" transform="translate(200,1385)" style="color:#183246"/><use href="#sub" transform="translate(390,1380)" style="color:#183246"/>
+<text x="225" y="1392" class="small" text-anchor="start">module</text>
+<text x="420" y="1392" class="small" text-anchor="start">subworkflow</text>
+<path d="M610 1386H665" fill="none" stroke="#138b93" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="680" y="1392" class="small" text-anchor="start">data route</text>
+<path d="M860 1386H915" fill="none" stroke="#d88b19" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 10"/>
+<text x="930" y="1392" class="small" text-anchor="start">optional / bypass route</text>
+<text x="65" y="1435" class="micro" text-anchor="start">Connections occur at stations or explicit branch points. SpatialData and RAMI2D_TRANSFORM are not wired into this export path.</text>
+<path d="M925 1180H1075" fill="none" stroke="#d88b19" stroke-width="4" stroke-dasharray="6 6"/><circle cx="1100" cy="1180" r="24" fill="white" stroke="#d88b19" stroke-width="3"/><use href="#module" transform="translate(1100,1178)" style="color:#d88b19"/><text x="1100" y="1232" text-anchor="middle" class="label">Warp mask</text><g fill="white"><path d="M450 244L459 250L450 256Z"/><path d="M1040 424L1049 430L1040 436Z"/><path d="M1100 644L1109 650L1100 656Z"/><path d="M1550 554L1559 560L1550 566Z"/><path d="M1624 790L1630 799L1636 790Z"/></g></svg>
