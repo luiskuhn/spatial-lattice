@@ -24,9 +24,13 @@ process STAINWARPY_REGISTER {
     def final_sz = params.final_sz ?: 'multiplexed'
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def resize_fix = file("${moduleDir}/fix_stainwarpy_resize.py", checkIfExists: true).text
 
     """
-    stainwarpy \\
+    cat > fix_stainwarpy_resize.py <<'PYTHON'
+${resize_fix}
+PYTHON
+    python fix_stainwarpy_resize.py \\
         register \\
         ${multiplx_img} \\
         ${hne_img} \\
