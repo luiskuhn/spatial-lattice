@@ -1,3 +1,4 @@
+include { BUILD_INTEGRATED_OMEZARR } from '../subworkflows/local/build_integrated_omezarr/main'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
@@ -204,27 +205,27 @@ workflow SPATIALLATTICE {
     if (params.stainwarpy) {
         ch_input.hne.view()
 
-        def ch_macsima_img = ASHLAR.out.tif.map { meta, tif -> [meta.project, meta, tif]}
+        def ch_macsima_img = ASHLAR.out.tif.map { meta, tif -> [[meta.experiment, meta.sample, meta.rack, meta.well, meta.roi], meta, tif]}
         def ch_hne_img = ch_input.hne.map { meta, hne_image ->
-            [meta.project, meta, hne_image]
+            [[meta.experiment, meta.sample, meta.rack, meta.well, meta.roi], meta, hne_image]
         }
 
         if (params.stainsegmy) {
             ch_segmask = STAINSEGMY.out.hne_seg_mask
                         .map { meta, seg_mask ->
-                            [meta.project, meta, seg_mask]
+                            [[meta.experiment, meta.sample, meta.rack, meta.well, meta.roi], meta, seg_mask]
                         }
         }
         else {
             ch_segmask = ch_hne_img
                         .map { project, meta, hne_file ->
-                            [meta.project, meta, []]
+                            [[meta.experiment, meta.sample, meta.rack, meta.well, meta.roi], meta, []]
                         }
         }
         //build registartion input channel for stainwarpy
         ch_stainwarpy_input = ch_macsima_img
-            .join(ch_hne_img)
-            .join(ch_segmask)
+            .join(ch_hne_img, failOnDuplicate: true, failOnMismatch: true)
+            .join(ch_segmask, failOnDuplicate: true, failOnMismatch: true)
             .map { key, macsima_meta, macsima_tif,hne_meta, hne_tif, meta_segmask, seg_mask -> [macsima_meta, macsima_tif, hne_tif, seg_mask] }
 
         TIF_REGISTRATION_STAINWARPY(ch_stainwarpy_input)
@@ -246,6 +247,25 @@ workflow SPATIALLATTICE {
         ch_rami2d_register.view()
 
         RAMI2D_REGISTER(ch_rami2d_register)
+    }
+
+    // Export only a complete, explicitly matched acquisition.
+    if (params.integrated_omezarr) {
+        if (!params.stainwarpy || params.fixed_img != 'multiplexed' || params.final_sz != 'multiplexed')
+            error 'Integrated OME-Zarr requires Stainwarpy with fixed_img and final_sz multiplexed'
+        if (!(params.segmentation in ['cellpose3', 'cellpose4']))
+            error 'Integrated OME-Zarr currently requires exactly one Cellpose method'
+        ch_export = ASHLAR.out.tif
+            .map { meta, image -> [meta.id, meta, image] }
+            .join(MACSIMA_SEGMENTATION.out.masks.map { meta, mask -> [meta.id, mask] }, failOnDuplicate: true, failOnMismatch: true)
+            .join(TIF_REGISTRATION_STAINWARPY.out.transformed_image.map { meta, image -> [meta.id, image] }, failOnDuplicate: true, failOnMismatch: true)
+            .join(ch_stainwarpy_input.map { meta, image, native_hne, mask -> [meta.id, native_hne] }, failOnDuplicate: true, failOnMismatch: true)
+            .join(TIF_REGISTRATION_STAINWARPY.out.transform.map { meta, transform -> [meta.id, transform] }, failOnDuplicate: true, failOnMismatch: true)
+            .join(TIF_REGISTRATION_STAINWARPY.out.metrics.map { meta, metrics -> [meta.id, metrics] }, failOnDuplicate: true, failOnMismatch: true)
+            .join(ch_markersheet.map { meta, markers -> [meta.id, markers] }, failOnDuplicate: true, failOnMismatch: true)
+            .map { id, meta, image, mask, hne, native_hne, transform, metrics, markers -> [meta, image, mask, hne, native_hne, transform, metrics, markers] }
+        BUILD_INTEGRATED_OMEZARR(ch_export)
+        ch_multiqc_files = ch_multiqc_files.mix(BUILD_INTEGRATED_OMEZARR.out.qc)
     }
 
     //

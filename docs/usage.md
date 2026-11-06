@@ -255,3 +255,7 @@ We recommend adding the following line to your environment to limit this (typica
 ```bash
 NXF_OPTS='-Xms1g -Xmx4g'
 ```
+
+## Integrated OME-Zarr
+
+See the [integration guide](integrated_omezarr.md) for setup, output layout, coordinate conventions, validation and limitations. Artifacts are published under `integrated/<acquisition_id>.ome.zarr`.
