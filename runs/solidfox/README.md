@@ -14,7 +14,8 @@ The CSV references the original raw MACSima ROI and H&E OME-TIFF under
 params.json preserves the previous run's processing choices, including
 Stainwarpy with the multiplexed fixed image and output size, high-exposure
 acquisitions, and Cellpose-SAM. This branch replaces cellpose_sam=true with
-segmentation=cellpose4 and cellpose4_pretrained_model=cpsam_v2.
+segmentation=cellpose3, cellpose3_pretrained_model=nuclei, diameter=17 and flow_threshold=0.4.
+Cellpose 3 uses 6 CPUs and 36 GB, matching the original successful full-mosaic run.
 Background subtraction, H&E segmentation and RAMI2D remain disabled.
 Boolean parameters are supplied as JSON because the bare --stainwarpy flag
 failed Boolean validation in the installed Nextflow 26.04.6 environment.

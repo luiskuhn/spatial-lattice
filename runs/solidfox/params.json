@@ -9,12 +9,7 @@
   "write_table": false,
   "background_subtraction": false,
   "stainsegmy": false,
-  "segmentation": "cellpose4",
-  "cellpose4_pretrained_model": "cpsam_v2",
-  "cellpose4_custom_model": null,
-  "cellpose4_save_flows": false,
-  "cellpose4_diameter": null,
-  "cellpose4_flow_threshold": null,
+  "segmentation": "cellpose3",
   "stainwarpy": true,
   "fixed_img": "multiplexed",
   "final_sz": "multiplexed",
@@ -22,5 +17,9 @@
   "rami2d_transform": false,
   "publish_dir_mode": "copy",
   "validate_params": true,
-  "integrated_omezarr": true
+  "integrated_omezarr": true,
+  "cellpose3_pretrained_model": "nuclei",
+  "cellpose3_diameter": 17,
+  "cellpose3_flow_threshold": 0.4,
+  "cellpose3_save_flows": false
 }

@@ -20,7 +20,7 @@ Use a JSON parameter file so Boolean values retain their type:
   "input": "/absolute/path/samplesheet.csv",
   "outdir": "/absolute/path/results",
   "project": false,
-  "segmentation": "cellpose4",
+  "segmentation": "cellpose3",
   "stainwarpy": true,
   "fixed_img": "multiplexed",
   "final_sz": "multiplexed",
