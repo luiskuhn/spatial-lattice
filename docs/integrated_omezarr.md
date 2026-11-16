@@ -4,6 +4,16 @@ The optional `BUILD_INTEGRATED_OMEZARR` subworkflow combines the stitched MACSim
 image, one Cellpose instance mask and registered H&E in one calibrated scene.
 It runs after registration and segmentation; its QC output is a dependency of MultiQC.
 
+## Prototype target diagram
+
+The [metro map](images/metromap.svg) describes the target first full prototype: all
+processing routes converge through mandatory `BUILD_INTEGRATED_OMEZARR` before
+MultiQC, producing an integrated OME-Zarr artifact with spatial metadata and
+provenance to support FAIR reuse. Its visual design follows the `dev` diagram.
+This is a conceptual documentation change; the current implementation still
+requires `integrated_omezarr: true`. Future implementation will follow the diagram
+step by step.
+
 ## Enable export
 
 Build the development container from the repository root:
