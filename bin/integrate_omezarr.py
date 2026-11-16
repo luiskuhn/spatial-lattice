@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""Write the current Stainwarpy 0.2.4 example as a calibrated NGFF scene."""
+"""Write registered images and masks as a calibrated NGFF scene."""
 
-import argparse, csv, json, hashlib
+import argparse, csv, json, hashlib, shutil
 from importlib.metadata import version
 from pathlib import Path
 from contextlib import ExitStack
@@ -63,6 +63,8 @@ def validate(path):
         == shapes["hne_registered"][-2:]
         == shapes["macsima/labels/cellpose"]
     )
+    if 'hne_registered/labels/segmentation' in shapes:
+        assert shapes['hne_registered/labels/segmentation'] == shapes['hne_registered'][-2:]
     Path("integrated_omezarr_mqc.json").write_text(
         json.dumps(
             {
@@ -70,7 +72,7 @@ def validate(path):
                 "section_name": "Integrated OME-Zarr",
                 "description": "Scene read-back and reference-grid validation.",
                 "plot_type": "table",
-                "data": {Path(path).name: {"images": 3, "validated": 1}},
+                "data": {Path(path).name: {"images": len(shapes), "validated": 1}},
             },
             indent=2,
         )
@@ -96,13 +98,21 @@ def export(a):
         markers = list(csv.DictReader(open(a.markers)))
         names = [r["marker_name"] for r in markers]
         assert len(names) == mac.shape[0], "Marker count mismatch"
+        moving_mask = None
+        if a.moving_mask:
+            moving_mask, moving_axes, _, _ = read(stack, a.moving_mask)
+            assert moving_axes == 'yx' and moving_mask.dtype.kind in 'ui'
+            assert moving_mask.shape == he.shape[-2:], 'Moving mask is not on the registered image grid'
         images = {}
         edges = []
-        for name, data, dims, label, channels in [
+        layers = [
             ("macsima", mac, axes, False, names),
             ("macsima/labels/cellpose", mask, la, True, None),
             ("hne_registered", he, ha, False, ["Red", "Green", "Blue"]),
-        ]:
+        ]
+        if moving_mask is not None:
+            layers.append(('hne_registered/labels/segmentation', moving_mask, 'yx', True, None))
+        for name, data, dims, label, channels in layers:
             image = ng.to_ngff_image(
                 data,
                 dims=tuple(dims),
@@ -135,52 +145,46 @@ def export(a):
             CoordinateSystem(
                 "macsima_physical",
                 [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")],
-            ),
-            CoordinateSystem(
-                "hne_native_pixels", [Axis("y", "space"), Axis("x", "space")]
-            ),
-            CoordinateSystem(
-                "registration_pixels", [Axis("y", "space"), Axis("x", "space")]
-            ),
+            )
         ]
-        systems.append(
-            CoordinateSystem(
-                "hne_native_physical",
-                [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")],
-            )
-        )
-        edges.append(
-            Affine(
-                input=Ref(name="hne_native_pixels"),
-                output=Ref(name="hne_native_physical"),
+        small = None
+        # RAMI2D native coordinates are provenance only until its transform adapter
+        # is validated. Do not add disconnected coordinates or an invented edge.
+        if a.backend == 'stainwarpy':
+            systems.extend([
+                CoordinateSystem("hne_native_pixels", [Axis("y", "space"), Axis("x", "space")]),
+                CoordinateSystem("registration_pixels", [Axis("y", "space"), Axis("x", "space")]),
+                CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")]),
+            ])
+            edges.append(Affine(
+                input=Ref(name="hne_native_pixels"), output=Ref(name="hne_native_physical"),
                 affine=[[float(npx[0]), 0, 0], [0, float(npx[1]), 0]],
+            ))
+            m = np.load(a.transform, allow_pickle=False)
+            assert m.shape == (3, 3) and np.allclose(m[2], [0, 0, 1]), (
+                "Only affine/similarity transforms supported"
             )
-        )
-        m = np.load(a.transform, allow_pickle=False)
-        assert m.shape == (3, 3) and np.allclose(m[2], [0, 0, 1]), (
-            "Only affine/similarity transforms supported"
-        )
-        swap = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
-        edges.append(
-            Affine(
-                input=Ref(name="hne_native_pixels"),
-                output=Ref(name="registration_pixels"),
-                affine=(swap @ m @ swap)[:2].tolist(),
+            swap = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+            edges.append(
+                Affine(
+                    input=Ref(name="hne_native_pixels"),
+                    output=Ref(name="registration_pixels"),
+                    affine=(swap @ m @ swap)[:2].tolist(),
+                )
             )
-        )
-        full = np.array(mac.shape[-2:])
-        small = (full / (npx[0] / px[0])).astype(int)
-        ratio = full / small
-        # skimage.resize pixel-center mapping from registration grid to original reference.
-        edges.append(
-            Affine(
-                input=Ref(name="registration_pixels"),
-                output=Ref(name="macsima_physical"),
-                affine=np.column_stack(
-                    (np.diag(px * ratio), px * (ratio - 1) / 2)
-                ).tolist(),
+            full = np.array(mac.shape[-2:])
+            small = (full / (npx[0] / px[0])).astype(int)
+            ratio = full / small
+            # skimage.resize pixel-center mapping from registration grid to original reference.
+            edges.append(
+                Affine(
+                    input=Ref(name="registration_pixels"),
+                    output=Ref(name="macsima_physical"),
+                    affine=np.column_stack(
+                        (np.diag(px * ratio), px * (ratio - 1) / 2)
+                    ).tolist(),
+                )
             )
-        )
         ng.to_ngff_zarr(
             out,
             ng.NgffScene(images, edges, systems),
@@ -193,10 +197,24 @@ def export(a):
         meta = dict(g.attrs["ome"])
         meta["image-label"] = {"version": "0.6", "source": {"image": "../../"}}
         g.attrs["ome"] = meta
+        if moving_mask is not None:
+            root['hne_registered/labels'].attrs['ome'] = {'version': '0.6', 'labels': ['segmentation']}
+            label_group = root['hne_registered/labels/segmentation']
+            label_metadata = dict(label_group.attrs['ome'])
+            label_metadata['image-label'] = {'version': '0.6', 'source': {'image': '../../'}}
+            label_group.attrs['ome'] = label_metadata
+        # Keep backend-native transforms without inventing a scene edge for ITK maps.
+        provenance = out / 'provenance'
+        provenance.mkdir()
+        shutil.copyfile(a.transform, provenance / Path(a.transform).name)
+        shutil.copyfile(a.metrics, provenance / Path(a.metrics).name)
         root.attrs["spatial_lattice"] = {
-            "adapter": "stainwarpy-0.2.4-fixed-and-final-multiplexed",
+            "adapter": a.backend + '-fixed-and-final-multiplexed',
+            "native_transform_file": 'provenance/' + Path(a.transform).name,
+            "native_transform_scene_edge": a.backend == 'stainwarpy',
+            "alignment_quality": "not_assessed",
             "native_hne_spacing_um": npx.tolist(),
-            "registration_shape_yx": small.tolist(),
+            "registration_shape_yx": small.tolist() if small is not None else None,
             "source_ome_xml": {"macsima": mx, "hne_native": nx, "hne_registered": hx},
             "markers": markers,
             "registration_metrics": json.load(open(a.metrics)),
@@ -207,7 +225,7 @@ def export(a):
             "sources": {
                 name: {"file": Path(value).name, "sha256": checksum(value)}
                 for name, value in vars(a).items()
-                if name != "output"
+                if name not in ("output", "backend") and value
             },
         }
     validate(out)
@@ -226,4 +244,6 @@ if __name__ == "__main__":
         "output",
     ):
         p.add_argument("--" + n, required=True)
+    p.add_argument('--backend', choices=['stainwarpy', 'rami2d'], default='stainwarpy')
+    p.add_argument('--moving-mask')
     export(p.parse_args())

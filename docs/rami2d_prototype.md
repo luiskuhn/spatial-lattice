@@ -1,12 +1,15 @@
 # RAMI2D alternative: first-prototype design
 
+> Implementation review: see [prototype_subworkflows.md](prototype_subworkflows.md) for the current code, commands, tests and limitations. The design below records the broader target, not a claim that every feature is implemented. The new RAMI2D modules are built from scratch; vector OME ROIs remain deferred.
+
+
 Design proposal only. The metro map now shows mutually exclusive Stainwarpy (default) and RAMI2D routes. Both converge on mandatory BUILD_INTEGRATED_OMEZARR. No runtime changes or registration experiments are part of this documentation update.
 
 ## Proposed subworkflow
 
 `REGISTRATION_RAMI2D`: validate pair and calibration → RAMI2D_REGISTER → RAMI2D_TRANSFORM for associated data when present → normalize and validate the registration-result bundle.
 
-Reuse the existing register/transform modules after correcting their interfaces. RAMI2D_REGISTER already creates the registered moving image, so do not transform that image a second time. RAMI2D_TRANSFORM applies the saved maps to additional moving-space images or labels. If no associated data exist, the subworkflow still emits the registered image and its transforms.
+Build new register, label-transform and result-export modules; leave the inherited wrappers unused. RAMI2D_REGISTER already creates the registered moving image, so do not transform that image a second time. RAMI2D_TRANSFORM applies the saved maps to additional moving-space images or labels. If no associated data exist, the subworkflow still emits the registered image and its transforms.
 
 Proposed selection: one `registration_backend` value (`stainwarpy` or `rami2d`), rather than two independently enabled backend flags. This is a proposed interface, not an implemented command-line parameter.
 
