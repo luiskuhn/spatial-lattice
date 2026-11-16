@@ -2,7 +2,7 @@
 
 Conceptual design only; this does not change pipeline behavior or declare a finalized schema.
 
-The [metro map](images/metromap.svg) groups Stainwarpy registration and transformation into a single `stainwarpy` subworkflow. It is the default backend when registration is selected. A future equivalent `rami2d` subworkflow will be an alternative selected by the user, not a sequential additional registration step. RAMI2D is not yet drawn as a second route in this iteration.
+The [metro map](images/metromap.svg) groups Stainwarpy registration and transformation into a single `stainwarpy` subworkflow. It is the default backend when registration is selected. A future equivalent `rami2d` subworkflow will be an alternative selected by the user, not a sequential additional registration step. The diagram now includes RAMI2D as a selectable alternative route. See [the RAMI2D implementation proposal](rami2d_prototype.md).
 
 Both backends should accept the same sample/ROI identity, reference and moving images, calibration, and optional labels. Each should emit one versioned registration-result bundle with the same layout and semantics:
 
@@ -20,3 +20,4 @@ A proposed bundle layout is `registration.json`, `images/`, `labels/`, `transfor
 Backend adapters will normalize these outputs. BUILD_INTEGRATED_OMEZARR will consume the common bundle without inspecting backend-specific filenames or parameter conventions. It must distinguish already-resampled images from native images so transforms are not applied twice, and map the declared coordinate systems and transform chain into the target OME-NGFF/RFC-5 representation.
 
 This common output interface supports FAIR reuse but does not by itself establish full FAIR compliance. The existing optional upstream routes are preserved in the diagram pending further prototype design.
+
