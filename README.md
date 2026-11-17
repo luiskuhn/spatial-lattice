@@ -15,13 +15,47 @@ This prototype requires per-ROI MACSima/H&E pairs and Cellpose 3. Project-folder
 
 ![spatial-lattice](docs/images/metromap.svg)
 
-The prototype groups processing into three subworkflows:
+## Pipeline steps
 
-1. **MACSIMA_MCMICRO** stages MACSima cycles, stitches tiles with ASHLAR, optionally subtracts background and segments with Cellpose 3.
-2. **SPATIAL_INTEGRATION_STAINWARPY** is the default image registration and optional moving-mask transformation path.
-3. **SPATIAL_INTEGRATION_RAMI2D** is the alternative path, implemented with new modules and selected with `--registration_backend rami2d`.
+1. **Input validation and pairing**
+   - Read the per-ROI samplesheet: experiment, sample, rack, well, ROI, raw MACSima cycle folder and H&E image.
+   - Match MACSima acquisitions to H&E by the complete sample/ROI identity; reject missing or ambiguous pairs. Preserve exposure-specific acquisition IDs to keep outputs distinct.
 
-The chosen registration path feeds the required **BUILD_INTEGRATED_OMEZARR**, followed by MultiQC. Reference Cellpose labels stay in the MACSima frame; optional moving labels are transformed once and exported alongside registered H&E. Native registration files are retained as provenance. RAMI2D linear native-to-reference transforms are mapped into the NGFF scene; its already-registered image and labels share the calibrated reference grid. See the [RFC-5 adapter](docs/rami2d_rfc5.md) for supported transforms and validation.
+2. **MACSima processing — `MACSIMA_MCMICRO`**
+   - **`MCSTAGING_MACSIMA2MC` (macsima2mc):** organize the raw cycle/tile images into acquisition groups and produce marker sheets. Apply the selected staging options, such as high-exposure filtering and illumination correction.
+   - **`ASHLAR`:** stitch tiles and align imaging cycles into a calibrated multichannel OME-TIFF mosaic. This mosaic remains the reference for registration and OME-Zarr export.
+   - **`BACKSUB` (optional):** subtract marker-associated background using the marker sheet. When enabled, its image feeds segmentation; it does not replace the ASHLAR registration/export reference.
+   - **`MACSIMA_SEGMENTATION` → `CELLPOSE3`:** segment the selected mosaic and produce integer instance labels in the MACSima reference frame. The integrated prototype currently requires Cellpose 3, even though the underlying segmentation workflow contains other methods.
+   - Forward the reference mosaic, Cellpose mask and marker sheet to the downstream integration steps.
+
+3. **H&E segmentation — `STAINSEGMY` (optional)**
+   - Segment the native H&E image when `--stainsegmy` is enabled.
+   - Forward its mask with the H&E image to the selected registration backend. Without it, registration and export proceed without a moving-image mask.
+   - Full-data testing of this route and its transformed masks remains outstanding; see the [annotation backlog](#todo-h-e-segmentation-and-spatial-annotation-transformations).
+
+4. **Spatial integration — choose one backend**
+   - **`SPATIAL_INTEGRATION_STAINWARPY` (default)** wraps `TIF_REGISTRATION_STAINWARPY`:
+     - **`STAINWARPY_EXTRACTCHANNEL`:** extract the reference channel from the MACSima mosaic.
+     - **`STAINWARPY_REGISTER`:** register H&E to MACSima and emit the registered image, native transformation matrix and registration metrics.
+     - **`STAINWARPY_TRANSFORMSEGMASK` (when a moving mask exists):** apply the corresponding registration to the H&E mask.
+   - **`SPATIAL_INTEGRATION_RAMI2D` (alternative, `--registration_backend rami2d`):**
+     - **`RAMI2D_REGISTER_IMAGES`:** validate calibration/channel settings, register the selected image channels and write H&E on the reference grid. Rigid registration is the default; rigid followed by affine is available.
+     - **`RAMI2D_TRANSFORM_LABELS` (when a moving mask exists):** transform the associated H&E labels using the saved registration, with label-preserving interpolation.
+     - **`RAMI2D_EXPORT_RESULT`:** package native ITK/Elastix transform files, the registration log and a provenance/parameter record.
+   - Both paths emit the same integration bundle: reference image, native and registered H&E, optional transformed moving mask, native transforms and backend metrics. MACSima Cellpose labels already occupy the reference frame and are not transformed again.
+
+5. **Multi-modal OME-Zarr Integration — Exporting OME-Zarr and SpatialData artifacts**
+   - **`BUILD_INTEGRATED_OMEZARR` (required subworkflow):** collect the selected backend's result with the matched reference Cellpose mask and marker sheet. Every processing route passes through this integration step before MultiQC.
+     - **`INTEGRATED_OMEZARR` → `bin/integrate_omezarr.py`:** read image/label arrays and OME calibration; require compatible reference-grid shapes and isotropic spatial calibration.
+     - Write MACSima, its Cellpose labels, registered H&E and optional transformed H&E labels into one OME-Zarr store per acquisition. Preserve full-resolution pixels; create four pyramid levels using Gaussian image downsampling and nearest-neighbour label downsampling.
+     - Record NGFF 0.6/RFC-5 coordinate systems and transformations, including native-H&E-to-reference mappings. For RAMI2D, `bin/rami2d_rfc5.py` resolves supported linear transform chains and resize geometry. Already-resampled images are not registered a second time.
+     - Preserve marker information, source OME XML and checksums, software versions, native transforms and registration metrics as provenance.
+     - Read back and validate the NGFF scene and reference grids; emit the artifact and `integrated_omezarr_mqc.json` for MultiQC.
+   - **Output today:** OME-Zarr. **Planned output:** SpatialData artifacts; serialization and interoperability checks are not implemented yet. The diagram names the intended integration stage, while the existing Nextflow identifiers remain unchanged. See the [integration guide](docs/integrated_omezarr.md).
+
+6. **Reporting — `MULTIQC`**
+   - Combine integration validation results, software versions, workflow parameters and methods into the final MultiQC report.
+   - Successful export and schema/grid validation do not establish biological registration accuracy; inspect the image and annotation overlays separately.
 
 See [prototype setup, containers and tests](docs/prototype_subworkflows.md) before running this development branch. OME vector ROIs remain in the [backlog](#deferred-ome-roi-objects-and-vector-spatial-annotations).
 
@@ -79,6 +113,8 @@ Both spatial integration paths should feed the required **BUILD_INTEGRATED_OMEZA
 
 The [shared registration contract](docs/prototype_registration.md), [RAMI2D design notes](docs/rami2d_prototype.md) and [OME-Zarr integration documentation](docs/integrated_omezarr.md) provide background. This scope decision supersedes any earlier suggestion in those design notes to reuse inherited RAMI2D modules or implement vector annotations during the first prototype.
 
+<a id="todo-h-e-segmentation-and-spatial-annotation-transformations"></a>
+
 ### TODO: H&E segmentation and spatial annotation transformations
 
 The full-data comparison on solidfox (2026-11-17) used `stainsegmy: false` for both backends. Its OME-Zarr artifacts contain MACSima Cellpose labels only; they do **not** validate transformation of real H&E segmentation masks. Earlier synthetic moving-mask tests cover basic wiring and label handling, but are not a substitute for this test.
@@ -88,6 +124,10 @@ The full-data comparison on solidfox (2026-11-17) used `stainsegmy: false` for b
 - [ ] **Extend transformation support to spatial objects later**, including points, circles/ellipses and polygons. Define a shared annotation contract and preserve object IDs, properties, source coordinates and provenance. Follow the [deferred OME ROI work plan](#deferred-ome-roi-objects-and-vector-spatial-annotations); vector support is not implemented by the current image/mask adapters.
 
 **Visual review note:** the user judged both full-data image registrations acceptable for this milestone, with Stainwarpy showing better fine-grained alignment than RAMI2D. This is qualitative feedback, not a quantitative accuracy benchmark or validation of annotation transformations. Registration optimization is outside this TODO.
+
+### TODO: SpatialData artifact export
+
+- [ ] Add SpatialData serialization to the Multi-modal OME-Zarr Integration stage. Map images, labels and future spatial objects into a shared coordinate system; preserve calibration, identifiers and provenance. Define the output layout and supported schema versions, and validate round trips and viewer interoperability against the OME-Zarr output before advertising SpatialData as an available artifact.
 
 ### Deferred: OME ROI objects and vector spatial annotations
 

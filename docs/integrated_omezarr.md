@@ -1,6 +1,15 @@
-# Integrated OME-Zarr output
+# Multi-modal OME-Zarr Integration
+
+**Exporting OME-Zarr and SpatialData artifacts** is the intended scope of this stage. The current implementation exports OME-Zarr only; SpatialData serialization is planned. The implementation identifiers remain `BUILD_INTEGRATED_OMEZARR` (subworkflow) and `INTEGRATED_OMEZARR` (module).
 
 `BUILD_INTEGRATED_OMEZARR` is required in the integrated prototype and runs before MultiQC. It combines the stitched MACSima reference image, its Cellpose 3 mask, registered H&E and an optional transformed moving mask. The registration backend is selected with `registration_backend`; Stainwarpy is the default and RAMI2D is the alternative.
+
+## Subworkflow and module responsibilities
+
+1. `BUILD_INTEGRATED_OMEZARR` receives each acquisition's matched reference image, Cellpose mask, native/registered H&E, optional transformed moving mask, transforms, metrics and marker sheet.
+2. `INTEGRATED_OMEZARR` invokes `bin/integrate_omezarr.py` to check array geometry and calibration, build the image/label pyramids and construct the NGFF scene. The RAMI2D adapter in `bin/rami2d_rfc5.py` maps supported native linear chains into the common reference coordinate system.
+3. The module writes one OME-Zarr store, retains source and registration provenance, and validates the stored scene before emitting its QC JSON. MultiQC consumes that QC output.
+4. A future SpatialData export will reuse the integrated data and coordinate relationships. It is not an additional registration step and is not currently emitted.
 
 ## Setup and execution
 
@@ -47,4 +56,4 @@ In the tested `napari-ome-zarr` environment, open the image subgroups rather tha
 napari --plugin napari-ome-zarr example.ome.zarr/macsima example.ome.zarr/hne_registered
 ```
 
-H&E channels represent RGB. Labels are associated with their image groups. See [test instructions](../tests/prototype/README.md) for generating a local toy example; the full original acquisition still needs an end-to-end rerun.
+H&E channels represent RGB. Labels are associated with their image groups. See [test instructions](../tests/prototype/README.md) for generating a local toy example; both backends have also completed full original-ROI runs on solidfox. Those runs disabled H&E segmentation, so full-data moving-mask validation remains pending.

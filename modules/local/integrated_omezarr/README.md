@@ -1,51 +1,27 @@
-# Integrated OME-Zarr
+# Multi-modal OME-Zarr Integration
 
-This module exports one MACSima acquisition, one Cellpose instance mask and
-the registered H&E into an NGFF 0.6 scene, using ngff-zarr 0.52.0.
-It is an experimental RFC-5 implementation; scene viewer compatibility varies.
-SpatialData serialization is deliberately deferred.
+**Exporting OME-Zarr and SpatialData artifacts** describes the intended integration stage. This module currently exports **OME-Zarr only**; SpatialData serialization remains planned.
 
-## Build on solidfox
+`INTEGRATED_OMEZARR` is called by the required `BUILD_INTEGRATED_OMEZARR` subworkflow before MultiQC. It uses ngff-zarr 0.52.0 to write an NGFF 0.6/RFC-5 scene. Viewer support for scene transforms varies.
 
-From the repository root:
+## Inputs and processing
 
-```bash
-docker build -t quay.io/spatial-lattice-omezarr:dev -f modules/local/integrated_omezarr/Dockerfile .
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
-conda activate nf-core
-nextflow run tests/omezarr_example.nf -profile docker --outdir results/omezarr-test -resume
-```
+- One stitched MACSima reference image, its Cellpose 3 mask and marker sheet.
+- Native H&E for calibration/provenance, registered H&E and an optional already-transformed H&E mask.
+- Native transformation assets and metrics from either Stainwarpy or RAMI2D.
 
-The quay.io tag is LOCAL ONLY, built above; no image has been published.
-requirements.txt pins the complete Python environment.
+`bin/integrate_omezarr.py` validates calibration and reference-grid shapes, preserves full-resolution image/label pixels, writes four pyramid levels and records coordinate mappings. Images use Gaussian pyramid downsampling; labels use nearest-neighbour downsampling. Image arrays are CYX and labels YX; physical spatial axes use micrometres.
 
-For the full pipeline, runs/solidfox/params.json enables integrated_omezarr.
-It requires stainwarpy=true, fixed_img=final_sz=multiplexed and exactly one
-Cellpose segmentation method. MultiQC waits for the exporter QC output.
-The example test uses the existing full-resolution mask in Caro/spl-out;
-it does not wait for or replace the still-running Caro Cellpose job.
+The existing Stainwarpy adapter and `bin/rami2d_rfc5.py` normalize supported linear native-to-reference mappings. Registered H&E and its transformed labels are already on the reference grid: this module does not register or resample them again. MACSima Cellpose labels remain in their original reference frame.
 
-## Coordinates
+Source OME XML, marker names, checksums, software versions, native transforms and metrics are preserved. The store records the native H&E coordinate relationship but does not include a native H&E pixel array. Per-cycle/tile ASHLAR transforms are not exported; the final mosaic calibration is retained. Nonlinear mappings and anisotropic calibration are unsupported.
 
-Image arrays are CYX; labels are YX. Physical spatial axes use micrometres.
-A scene affine projects channel coordinates away into the shared spatial frame.
-Registered H&E is already resampled: registration is NOT applied again.
+## Outputs and validation
 
-The adapter is specific to Stainwarpy 0.2.4 affine/similarity registration.
-The saved matrix maps native H&E XY pixels to a reduced MACSima registration
-grid. Axis permutation converts XY to YX. The grid-to-reference mapping
-includes integer shape rounding and skimage.resize pixel-center offsets.
-Source H&E physical calibration is represented separately.
-Unsupported projective transforms and anisotropic calibration are rejected.
+- `<acquisition_id>.ome.zarr`: images, associated labels, coordinate transformations and provenance.
+- `integrated_omezarr_mqc.json`: scene read-back and grid-validation results for MultiQC.
+- Software-version topic entry.
 
-Full-resolution pixels are preserved. Image pyramids use Gaussian downsampling;
-label pyramids use nearest neighbour. Source OME-XML, marker names, registration
-metrics, source checksums and exporter versions are retained in a namespaced
-spatial_lattice provenance attribute. Source OME-XML is provenance, not a claim
-that the original acquisition geometry still describes resampled H&E.
+There is currently no SpatialData output. Full-data H&E segmentation/moving-mask tests and future spatial-object support are tracked in the [README backlog](../../../README.md#development-backlog).
 
-Export reads back the scene and checks grid consistency before publishing.
-tests/check_omezarr_example.py adds sample pixel/label and coordinate checks.
-The scene contains no native H&E pixel array, only its coordinate relationship.
-Stitching/per-cycle ASHLAR transformations are not exported by this module;
-only the final mosaic calibration and Stainwarpy registration are represented.
+See the [integration guide](../../../docs/integrated_omezarr.md) for artifact layout, container setup, calibration and viewing, and [prototype tests](../../../tests/prototype/README.md) for validation commands.
