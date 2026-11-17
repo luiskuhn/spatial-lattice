@@ -7,6 +7,10 @@ process INTEGRATED_OMEZARR {
     output:
     tuple val(meta), path("*.ome.zarr"), emit: store
     path("integrated_omezarr_mqc.json"), emit: qc
+    tuple val("${task.process}"), val('ngff-zarr'), eval("python -c \"from importlib.metadata import version; print(version('ngff-zarr'))\""), emit: version, topic: versions
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def mask_arg = moving_mask ? "--moving-mask '$moving_mask'" : ''
     def backend = meta.registration_backend ?: 'stainwarpy'

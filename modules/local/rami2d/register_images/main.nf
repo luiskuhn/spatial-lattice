@@ -8,6 +8,9 @@ process RAMI2D_REGISTER_IMAGES {
     tuple val(meta), path('registration/*_registered.ome.tif'), emit: image
     tuple val(meta), path('registration/qc/fullres_trf'), path('settings.json'), path('registration.log'), emit: transforms
     tuple val("${task.process}"), val('rami2d'), eval('rami2d-register --version'), emit: version, topic: versions
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def initial = settings.initial_alignment ? '-a' : ''
     """

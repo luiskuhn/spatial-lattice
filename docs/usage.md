@@ -1,3 +1,5 @@
+> Development branch: for the integrated prototype, use the [current README](../README.md), [implementation notes](prototype_subworkflows.md) and [OME-Zarr output guide](integrated_omezarr.md). Legacy options described below may not apply to this entry point.
+
 # nf-core/spatiallattice: Usage
 
 ## :warning: Please read this documentation on the nf-core website: [https://nf-co.re/spatiallattice/usage](https://nf-co.re/spatiallattice/usage)

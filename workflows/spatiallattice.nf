@@ -49,77 +49,10 @@ workflow SPATIALLATTICE {
     if (params.segmentation != 'cellpose3')
         error 'The integrated prototype currently requires --segmentation cellpose3'
 
-   // if batch processing a project, collect metadata from the project directory structure
-   // HnE processing not functional yet for this option
-    if (params.project){
-        ch_input = ch_samplesheet
-        .flatMap { meta, project, hne ->
-            def roi_tuples = []
-            project.eachDir { exp_dir ->
-                log.info "experiment dir name: ${exp_dir.name}"
-                def experiment = exp_dir.name
-                def sample_dir = exp_dir
-                    .listFiles()
-                    .findAll { it -> it.isDirectory()}
-                    .find { it -> (it/ 'RawData').isDirectory() }
-
-                def rawdata_dir = sample_dir / 'RawData'
-                if (rawdata_dir == null) return
-                log.info "rawdata dir: ${rawdata_dir}"
-
-                log.info "Checking if rawdata dir is a directory: ${rawdata_dir.isDirectory()}"
-                if (!rawdata_dir.isDirectory()) return
-
-                rawdata_dir.eachDir { rack_dir ->
-                    def rack = rack_dir.name
-                    log.info "rack dir name: ${rack}"
-                    if (rack == 'R0') return
-
-                    rack_dir.eachDir { well_dir ->
-                        def well = well_dir.name
-                        log.info "well dir name: ${well}"
-
-                        well_dir.eachDir { roi_dir ->
-                            def roi = roi_dir.name
-                            log.info "roi dir name: ${roi}"
-                            if (roi == 'ROI0') return
-
-                            def unique_roi_id = "${rack}_${well}_${roi}"
-                            def new_meta = meta.clone()
-                            new_meta.experiment = experiment
-                            new_meta.sample = sample_dir.name
-                            new_meta.rack = rack
-                            new_meta.well = well
-                            new_meta.roi = roi
-                            new_meta.id = unique_roi_id
-
-                            roi_tuples << [new_meta, roi_dir, hne]
-                        }
-                    }
-                }
-            }
-            return roi_tuples
-
-        }
-        .multiMap { meta, macsima, hne_ ->
-            macsima: [meta, macsima]
-            hne: [meta, hne_]
-        }
+    ch_input = ch_samplesheet.multiMap { meta, macsima, hne ->
+        macsima: [meta, macsima]
+        hne: [meta, hne]
     }
-    else {
-        // Split into macsima and hne channels
-        ch_samplesheet
-            .multiMap { meta, macsima, hne_ ->
-                macsima: [meta, macsima]
-                hne: [meta, hne_]
-            }
-            .set { ch_input }
-    }
-
-
-
-
-
 
     MACSIMA_MCMICRO(ch_input.macsima)
     if (params.stainsegmy) {
