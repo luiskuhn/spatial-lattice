@@ -1,5 +1,8 @@
 # Prototype registration subworkflows
 
+> Implementation review: see [prototype_subworkflows.md](prototype_subworkflows.md) for the current code, commands, tests and limitations. The design below records the broader target, not a claim that every feature is implemented. The new RAMI2D modules are built from scratch; vector OME ROIs remain deferred.
+
+
 Conceptual design only; this does not change pipeline behavior or declare a finalized schema.
 
 The [metro map](images/metromap.svg) groups Stainwarpy registration and transformation into a single `stainwarpy` subworkflow. It is the default backend when registration is selected. A future equivalent `rami2d` subworkflow will be an alternative selected by the user, not a sequential additional registration step. The diagram now includes RAMI2D as a selectable alternative route. See [the RAMI2D implementation proposal](rami2d_prototype.md).
