@@ -2,7 +2,7 @@ include { RAMI2D_REGISTER_IMAGES } from '../../../modules/local/rami2d/register_
 include { RAMI2D_TRANSFORM_LABELS } from '../../../modules/local/rami2d/transform_labels/main'
 include { RAMI2D_EXPORT_RESULT } from '../../../modules/local/rami2d/export_result/main'
 
-workflow SPATIAL_INTEGRATION_RAMI2D {
+workflow SPATIAL_REGISTRATION_RAMI2D {
     take:
     ch_input // [meta, fixed MACSima, moving H&E, moving mask or []]
     main:

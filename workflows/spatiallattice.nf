@@ -1,6 +1,6 @@
 include { MACSIMA_MCMICRO } from '../subworkflows/local/macsima_mcmicro/main'
-include { SPATIAL_INTEGRATION_STAINWARPY } from '../subworkflows/local/spatial_integration_stainwarpy/main'
-include { SPATIAL_INTEGRATION_RAMI2D } from '../subworkflows/local/spatial_integration_rami2d/main'
+include { SPATIAL_REGISTRATION_STAINWARPY } from '../subworkflows/local/spatial_registration_stainwarpy/main'
+include { SPATIAL_REGISTRATION_RAMI2D } from '../subworkflows/local/spatial_registration_rami2d/main'
 include { BUILD_INTEGRATED_OMEZARR } from '../subworkflows/local/build_integrated_omezarr/main'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,11 +84,11 @@ workflow SPATIALLATTICE {
         .map { key, meta, fixed, moving_meta, moving, mask -> [meta, fixed, moving, mask] }
 
     if (params.registration_backend == 'stainwarpy') {
-        SPATIAL_INTEGRATION_STAINWARPY(ch_registration)
-        ch_result = SPATIAL_INTEGRATION_STAINWARPY.out.result
+        SPATIAL_REGISTRATION_STAINWARPY(ch_registration)
+        ch_result = SPATIAL_REGISTRATION_STAINWARPY.out.result
     } else {
-        SPATIAL_INTEGRATION_RAMI2D(ch_registration)
-        ch_result = SPATIAL_INTEGRATION_RAMI2D.out.result
+        SPATIAL_REGISTRATION_RAMI2D(ch_registration)
+        ch_result = SPATIAL_REGISTRATION_RAMI2D.out.result
     }
 
     ch_export = ch_result.map { meta, fixed, native_image, registered, moving_mask, transform, metrics ->

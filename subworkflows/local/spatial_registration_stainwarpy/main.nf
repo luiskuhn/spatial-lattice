@@ -2,7 +2,7 @@ include { TIF_REGISTRATION_STAINWARPY } from '../tif_registration_stainwarpy/mai
 
 // Both backends emit [meta, fixed, native_moving, registered, moving_mask_or_empty,
 //                    native_transform, metrics]. Registered images/masks use the fixed grid.
-workflow SPATIAL_INTEGRATION_STAINWARPY {
+workflow SPATIAL_REGISTRATION_STAINWARPY {
     take:
     ch_input // [meta, fixed MACSima image, moving H&E image, optional moving mask]
     main:

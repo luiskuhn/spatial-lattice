@@ -9,9 +9,11 @@ This is the `luiskuhn/spatial-lattice` development fork, built from an nf-core t
 
 ## Introduction
 
-**spatial-lattice** integrates MACSima multiplexed imaging, H&E and segmentation labels into a calibrated OME-Zarr artifact, followed by a MultiQC report.
+**spatial-lattice** is a [Nextflow](https://www.nextflow.io/) pipeline for integrating 2D tissue images acquired with different modalities and physical resolutions into a shared spatial reference. The current prototype pairs multiplexed MACSima imaging with hematoxylin and eosin (H&E) histology: it organizes acquisition cycles, stitches and aligns tiles, segments the fluorescence mosaic, and registers H&E to the MACSima frame using either Stainwarpy or RAMI2D. Its modular organization separates acquisition processing, spatial registration and artifact export, so new modalities and registration tools can be introduced without redesigning the downstream integration interface. MACSima processing draws on tools from the [MCMICRO ecosystem](https://mcmicro.org/).
 
-This prototype requires per-ROI MACSima/H&E pairs and Cellpose 3. Project-folder mode, other segmentation methods and vector OME ROIs are outside the integrated entry point. See the [implementation notes](docs/prototype_subworkflows.md) and [review status](docs/implementation_review.md).
+The main output is one calibrated, multiscale **OME-Zarr** artifact per acquisition, containing the reference image, registered H&E and associated segmentation labels. The exporter retains physical units, marker information, source metadata, checksums and native registration assets, and expresses coordinate relationships using the pinned [NGFF RFC-5 implementation](https://ngff.openmicroscopy.org/rfc/5/). This supports inspection, traceability and reuse in a [FAIR-oriented workflow](https://doi.org/10.1038/sdata.2016.18); writing an OME-Zarr alone does not make a dataset fully FAIR. MultiQC summarizes export validation and run provenance. Future development will extend the integration stage to [SpatialData artifacts](https://spatialdata.scverse.org/en/stable/), additional multiplexed imaging platforms such as CODEX, spatial-omics data and vector annotations.
+
+**Current scope:** per-ROI MACSima/H&E pairs, Cellpose 3 and OME-Zarr export. SpatialData export, CODEX-specific ingestion, spatial-omics integration and vector OME ROIs are not yet implemented. Project-folder mode and other segmentation methods are outside the integrated entry point. Full-data H&E segmentation and moving-mask validation remain pending. See the [implementation notes](docs/prototype_subworkflows.md), [validation status](#pipeline-output-and-validation) and [development backlog](#development-backlog).
 
 ![spatial-lattice](docs/images/metromap.svg)
 
@@ -33,12 +35,13 @@ This prototype requires per-ROI MACSima/H&E pairs and Cellpose 3. Project-folder
    - Forward its mask with the H&E image to the selected registration backend. Without it, registration and export proceed without a moving-image mask.
    - Full-data testing of this route and its transformed masks remains outstanding; see the [annotation backlog](#todo-h-e-segmentation-and-spatial-annotation-transformations).
 
-4. **Spatial integration — choose one backend**
-   - **`SPATIAL_INTEGRATION_STAINWARPY` (default)** wraps `TIF_REGISTRATION_STAINWARPY`:
+4. **Spatial Registration**
+   - Select one backend; both use MACSima as the fixed image and final output grid.
+   - **`SPATIAL_REGISTRATION_STAINWARPY` (default)** wraps `TIF_REGISTRATION_STAINWARPY`:
      - **`STAINWARPY_EXTRACTCHANNEL`:** extract the reference channel from the MACSima mosaic.
      - **`STAINWARPY_REGISTER`:** register H&E to MACSima and emit the registered image, native transformation matrix and registration metrics.
      - **`STAINWARPY_TRANSFORMSEGMASK` (when a moving mask exists):** apply the corresponding registration to the H&E mask.
-   - **`SPATIAL_INTEGRATION_RAMI2D` (alternative, `--registration_backend rami2d`):**
+   - **`SPATIAL_REGISTRATION_RAMI2D` (alternative, `--registration_backend rami2d`):**
      - **`RAMI2D_REGISTER_IMAGES`:** validate calibration/channel settings, register the selected image channels and write H&E on the reference grid. Rigid registration is the default; rigid followed by affine is available.
      - **`RAMI2D_TRANSFORM_LABELS` (when a moving mask exists):** transform the associated H&E labels using the saved registration, with label-preserving interpolation.
      - **`RAMI2D_EXPORT_RESULT`:** package native ITK/Elastix transform files, the registration log and a provenance/parameter record.
@@ -61,7 +64,7 @@ See [prototype setup, containers and tests](docs/prototype_subworkflows.md) befo
 
 ## Usage
 
-Install Nextflow (at least 25.10.4) and Docker. Clone this fork and select the branch being reviewed. Build the local images before running:
+Install [Nextflow](https://www.nextflow.io/docs/latest/install.html) (at least 25.10.4), a compatible Java runtime and Docker. Full-data testing used Nextflow 26.04.6 from the `nf-core` conda environment on Linux. Clone the repository and select the development branch you intend to run; the commands below execute that local checkout. Build the local images on the execution host:
 
 ```bash
 docker build -f modules/local/rami2d/Dockerfile -t spatial-lattice/rami2d:1.0.2-f6c4cc0 .
@@ -69,6 +72,19 @@ docker build -f modules/local/integrated_omezarr/Dockerfile -t spatial-lattice/o
 ```
 
 These tags are local builds, not published container images. Original acquisition inputs are needed for a full pipeline run; the [local toy tests](tests/prototype/README.md) start from processed images.
+
+The pipeline defaults to the Quay registry. To use these local builds, save the following as `local-containers.config` (these are process settings, not pipeline parameters):
+
+```groovy
+process {
+    withName: 'INTEGRATED_OMEZARR' {
+        container = 'docker.io/spatial-lattice/omezarr:rami2d-rfc5-v1'
+    }
+    withName: 'RAMI2D_REGISTER_IMAGES|RAMI2D_TRANSFORM_LABELS|RAMI2D_EXPORT_RESULT' {
+        container = 'docker.io/spatial-lattice/rami2d:1.0.2-f6c4cc0'
+    }
+}
+```
 
 `samplesheet.csv`:
 
@@ -84,18 +100,21 @@ Now, you can run the pipeline using:
 ```bash
 nextflow run . \
    -profile docker \
+   -c local-containers.config \
    --input samplesheet.csv \
-   --outdir <OUTDIR>
+   --outdir results/example
 ```
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
-Stainwarpy is the default. For RAMI2D use `--registration_backend rami2d` and provide measured pixel sizes and registration channels in a parameter file; see the [example](docs/prototype_subworkflows.md#docker-setup). Use `nextflow run . --help` for parameters. Legacy `--stainwarpy` and `--rami2d` flags are rejected.
+Stainwarpy is the default. For RAMI2D use `--registration_backend rami2d` and provide measured pixel sizes and registration channels in a parameter file; see the [example](docs/prototype_subworkflows.md#docker-setup). Use `nextflow run . --help` for parameters. Legacy `--stainwarpy` and `--rami2d` flags are rejected. RAMI2D 1.0.2 required a lossless interleaved RGB copy of the original planar H&E TIFF in the full-data test; this preparation is not automated by the pipeline. Verify pixel values and calibration when converting inputs.
+
+The backend workflow names are now `SPATIAL_REGISTRATION_STAINWARPY` and `SPATIAL_REGISTRATION_RAMI2D`. Update external selectors that use the previous fully qualified names; the rename can invalidate cached registration tasks on resume. The tool commands and parameters are unchanged.
 
 ## Pipeline output and validation
 
-The required OME-Zarr contains MACSima, its Cellpose labels, registered H&E, optional transformed moving labels, physical calibration, RFC-5 transformations and native provenance. MultiQC is written under `multiqc/`. See [OME-Zarr output](docs/integrated_omezarr.md) and [RAMI2D mapping](docs/rami2d_rfc5.md).
+Under `--outdir`, `integrated/<acquisition_id>.ome.zarr` contains MACSima, its Cellpose labels, registered H&E, optional transformed moving labels, physical calibration, RFC-5 transformations and native provenance. Each store includes `macsima`, `macsima/labels/cellpose`, `hne_registered` and, when present, `hne_registered/labels/segmentation`. The MultiQC report is written under `multiqc/`, and run reports/parameters under `pipeline_info/`. See [OME-Zarr output](docs/integrated_omezarr.md) and [RAMI2D mapping](docs/rami2d_rfc5.md).
 
 The three subworkflows are implemented and tested on synthetic and tissue-derived examples. Workflow wiring tests cover two ROIs and both backends. Both backends have also completed on the original full MACSima ROI and H&E on solidfox (2026-11-17), with H&E segmentation disabled. RAMI2D used a verified lossless RGB-layout copy of the H&E input. Full-data moving-mask validation remains pending. Successful execution and valid metadata do not establish biological registration accuracy.
 
@@ -106,10 +125,10 @@ The three subworkflows are implemented and tested on synthetic and tissue-derive
 The blocks shown in the [metro map](docs/images/metromap.svg) are implemented for review:
 
 1. **MACSIMA_MCMICRO**: group macsima2mc, ASHLAR, optional background subtraction and the existing segmentation workflow. Retain Cellpose 3 for the example run and preserve the current processing behaviour.
-2. **SPATIAL_INTEGRATION_STAINWARPY (default)**: group the existing registration and transformation modules, exposing a common result contract for registered images, optional segmentation masks, transforms, calibration, provenance and QC. Keep Stainwarpy's registration algorithm unchanged.
-3. **SPATIAL_INTEGRATION_RAMI2D (alternative)**: build all required Nextflow modules from scratch, with pinned Docker containers, tests and the same result contract. Do not base implementation on repairing the inherited RAMI2D wrappers.
+2. **SPATIAL_REGISTRATION_STAINWARPY (default)**: group the existing registration and transformation modules, exposing a common result contract for registered images, optional segmentation masks, transforms, calibration, provenance and QC. Keep Stainwarpy's registration algorithm unchanged.
+3. **SPATIAL_REGISTRATION_RAMI2D (alternative)**: provide dedicated registration, label-transformation and result-export modules, with a pinned RAMI2D source revision, tests and the shared result contract. The inherited RAMI2D wrappers remain unused.
 
-Both spatial integration paths should feed the required **BUILD_INTEGRATED_OMEZARR** subworkflow before MultiQC. For this milestone, supported spatial annotations are **segmentation masks only**. Masks already in the reference frame should retain that frame; moving-image masks should use the corresponding image transform with label-preserving interpolation. Vector ROI support is deferred and must not block these three subworkflows.
+Both spatial registration paths feed the required **BUILD_INTEGRATED_OMEZARR** subworkflow before MultiQC. For this milestone, supported spatial annotations are **segmentation masks only**. Masks already in the reference frame should retain that frame; moving-image masks should use the corresponding image transform with label-preserving interpolation. Vector ROI support is deferred and must not block these three subworkflows.
 
 The [shared registration contract](docs/prototype_registration.md), [RAMI2D design notes](docs/rami2d_prototype.md) and [OME-Zarr integration documentation](docs/integrated_omezarr.md) provide background. This scope decision supersedes any earlier suggestion in those design notes to reuse inherited RAMI2D modules or implement vector annotations during the first prototype.
 
@@ -175,12 +194,17 @@ For further information or help, don't hesitate to get in touch or open issues.
 
 ## Citations
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use nf-core/spatiallattice for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+Please cite the tools and methods used in your run, rather than every available backend. [CITATIONS.md](CITATIONS.md) lists publications and software references, including the original Cellpose work used by the nuclei-model example; Cellpose-SAM is not the segmentation method used in this prototype.
 
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
-
-An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
+| Component or concept | Reference |
+| --- | --- |
+| Workflow execution and conventions | [Nextflow](https://doi.org/10.1038/nbt.3820), [nf-core](https://doi.org/10.1038/s41587-020-0439-x) |
+| Multiplexed image processing | [MCMICRO](https://doi.org/10.1038/s41592-021-01308-y), [macsima2mc](https://github.com/SchapiroLabor/macsima2mc), [ASHLAR](https://doi.org/10.1093/bioinformatics/btac544), [Backsub](https://github.com/SchapiroLabor/Background_subtraction) |
+| Segmentation | [Cellpose](https://doi.org/10.1038/s41592-020-01018-x), [Cellpose 3 documentation](https://cellpose.readthedocs.io/en/v3.1.1.1/), [stainsegmy](https://github.com/qbic-pipelines/stainsegmy) |
+| Spatial registration | [Stainwarpy](https://github.com/qbic-pipelines/stainwarpy), [RAMI2D pinned source](https://github.com/VictorDidier/RAMI2D/tree/f6c4cc0f48dbd86b866ade8d3bf67177dd45712f) |
+| Multiscale data and coordinate metadata | [OME-NGFF RFC-5](https://ngff.openmicroscopy.org/rfc/5/), [ngff-zarr](https://ngff-zarr.readthedocs.io/) |
+| Reporting | [MultiQC](https://doi.org/10.1093/bioinformatics/btw354) |
+| Data reuse and future integration | [FAIR principles](https://doi.org/10.1038/sdata.2016.18), [SpatialData](https://doi.org/10.1038/s41592-024-02212-x) (planned export) |
 
 You can cite the `nf-core` publication as follows:
 

@@ -4,11 +4,11 @@ This branch targets `forward-cycle`. It implements the metro-map grouping while 
 
 ## Data flow
 
-`MACSIMA_MCMICRO` → choose `SPATIAL_INTEGRATION_STAINWARPY` (default) or `SPATIAL_INTEGRATION_RAMI2D` → required `BUILD_INTEGRATED_OMEZARR` → MultiQC.
+`MACSIMA_MCMICRO` → choose `SPATIAL_REGISTRATION_STAINWARPY` (default) or `SPATIAL_REGISTRATION_RAMI2D` → required `BUILD_INTEGRATED_OMEZARR` → MultiQC.
 
 - **MACSIMA_MCMICRO** contains macsima2mc, ASHLAR, optional BACKSUB and the existing MACSIMA_SEGMENTATION subworkflow. It exposes the ASHLAR reference image, segmentation input image, masks and marker sheet. As before, background subtraction changes the segmentation input; registration and export use the ASHLAR image. The example retains Cellpose 3 and its channel-axis setting.
-- **SPATIAL_INTEGRATION_STAINWARPY** adapts the existing TIF_REGISTRATION_STAINWARPY subworkflow. Its registration tools, parameters and containers are unchanged. Optional-mask detection now tests for the empty-list sentinel instead of testing whether the mask file is empty.
-- **SPATIAL_INTEGRATION_RAMI2D** uses three new modules: RAMI2D_REGISTER_IMAGES, RAMI2D_TRANSFORM_LABELS and RAMI2D_EXPORT_RESULT. Registration produces the registered image and native maps; only associated moving masks go through the transform module. No second image transformation is applied. The inherited RAMI2D wrappers are unused.
+- **SPATIAL_REGISTRATION_STAINWARPY** adapts the existing TIF_REGISTRATION_STAINWARPY subworkflow. Its registration tools, parameters and containers are unchanged. Optional-mask detection now tests for the empty-list sentinel instead of testing whether the mask file is empty.
+- **SPATIAL_REGISTRATION_RAMI2D** uses three new modules: RAMI2D_REGISTER_IMAGES, RAMI2D_TRANSFORM_LABELS and RAMI2D_EXPORT_RESULT. Registration produces the registered image and native maps; only associated moving masks go through the transform module. No second image transformation is applied. The inherited RAMI2D wrappers are unused.
 
 Both spatial integration subworkflows take `[meta, fixed, moving, moving_mask_or_empty_list]` and emit:
 
@@ -22,6 +22,8 @@ The tuple and reference-grid semantics are shared; native transform encoding and
 Pairing uses experiment, sample, rack, well and ROI. A moving image may be reused across acquisition exposures. Duplicate or missing pairing keys and duplicate acquisition IDs fail explicitly. File IDs now encode all five identity fields with length prefixes, so ROIs from one experiment cannot overwrite one another. This changes output filenames compared with the earlier experiment-only ID.
 
 ## Scope and migration
+
+- The backend subworkflows are named `SPATIAL_REGISTRATION_STAINWARPY` and `SPATIAL_REGISTRATION_RAMI2D`, under `subworkflows/local/spatial_registration_*`. Update any external selectors that include the old fully qualified process names. The renamed process scopes can invalidate cached registration tasks on resume; tool commands and registration settings are unchanged.
 
 - Use `--registration_backend stainwarpy` or `--registration_backend rami2d`. Legacy `--stainwarpy` and `--rami2d` flags are rejected with a migration message. The solidfox example parameter file is updated.
 - OME-Zarr is mandatory. `--integrated_omezarr false` is rejected; it is no longer an optional path.
