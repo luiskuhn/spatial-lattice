@@ -29,7 +29,7 @@ The prototype groups processing into three subworkflows:
 2. **SPATIAL_INTEGRATION_STAINWARPY** is the default image registration and optional moving-mask transformation path.
 3. **SPATIAL_INTEGRATION_RAMI2D** is the alternative path, implemented with new modules and selected with `--registration_backend rami2d`.
 
-The chosen registration path feeds the required **BUILD_INTEGRATED_OMEZARR**, followed by MultiQC. Reference Cellpose labels stay in the MACSima frame; optional moving labels are transformed once and exported alongside registered H&E. Native registration files are retained as provenance. RAMI2D native-to-reference NGFF transform conversion is not yet implemented; its already-registered image and labels share the calibrated reference grid.
+The chosen registration path feeds the required **BUILD_INTEGRATED_OMEZARR**, followed by MultiQC. Reference Cellpose labels stay in the MACSima frame; optional moving labels are transformed once and exported alongside registered H&E. Native registration files are retained as provenance. RAMI2D linear native-to-reference transforms are mapped into the NGFF scene; its already-registered image and labels share the calibrated reference grid. See the [RFC-5 adapter](docs/rami2d_rfc5.md) for supported transforms and validation.
 
 See [prototype setup, containers and tests](docs/prototype_subworkflows.md) before running this development branch. OME vector ROIs remain in the [backlog](#deferred-ome-roi-objects-and-vector-spatial-annotations).
 

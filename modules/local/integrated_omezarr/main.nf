@@ -1,7 +1,7 @@
 process INTEGRATED_OMEZARR {
     tag "$meta.id"
     label 'process_medium'
-    container 'spatial-lattice/omezarr:prototype-subworkflows'
+    container 'spatial-lattice/omezarr:rami2d-rfc5-v1'
     input:
     tuple val(meta), path(macsima), path(mask), path(hne), path(native_hne), path(transform), path(metrics), path(markers), path(moving_mask)
     output:
@@ -11,6 +11,7 @@ process INTEGRATED_OMEZARR {
     def mask_arg = moving_mask ? "--moving-mask '$moving_mask'" : ''
     def backend = meta.registration_backend ?: 'stainwarpy'
     """
+    # RFC-5 adapter includes native-to-resized pixel-centre geometry.
     export XDG_CACHE_HOME=/tmp/ngff-cache
     integrate_omezarr.py --macsima '$macsima' --mask '$mask' --hne '$hne' \
         --native-hne '$native_hne' --transform '$transform' --metrics '$metrics' \

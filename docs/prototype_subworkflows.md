@@ -36,7 +36,7 @@ Build these local images from the repository root on the machine that will execu
 
 ```bash
 docker build -f modules/local/rami2d/Dockerfile -t spatial-lattice/rami2d:1.0.2-f6c4cc0 .
-docker build -f modules/local/integrated_omezarr/Dockerfile -t spatial-lattice/omezarr:prototype-subworkflows .
+docker build -f modules/local/integrated_omezarr/Dockerfile -t spatial-lattice/omezarr:rami2d-rfc5-v1 .
 ```
 
 These are local build tags, **not published registry images**. The RAMI2D Dockerfile pins the upstream source commit `f6c4cc0f48dbd86b866ade8d3bf67177dd45712f` (version 1.0.2). Upstream pins its direct dependencies; transitive dependencies and the base tag are not a complete reproducibility lock. Record built image digests for deployment. The exporter retains its existing pinned Python requirements. Existing processing modules retain their own containers. Stainwarpy's existing container is amd64 and runs under Docker emulation on Apple Silicon.
@@ -66,7 +66,9 @@ The example channel and calibration values are illustrative, not universal defau
 
 ## Transform metadata limits
 
-The existing Stainwarpy NGFF affine adapter is retained. RAMI2D registered images and masks are written on the fixed image grid and share its physical coordinate system. Native ITK maps are archived as provenance; they are **not converted into an RFC-5 edge connecting native H&E to the reference**. This is an explicit remaining interoperability gap. A future conversion must verify composition, direction, centers, origin/spacing and initialization against Transformix; the code does not guess an affine from parameter vectors.
+The existing Stainwarpy NGFF affine adapter is retained. RAMI2D linear transform chains now produce an RFC-5 edge from native H&E physical coordinates to the calibrated MACSima reference. The Python adapter resolves the saved chain, handles transform centres and output-grid geometry, inverts the resampling map and converts XY to YX. Native parameter files remain archived. See [rami2d_rfc5.md](rami2d_rfc5.md) for the mathematical convention and Transformix validation.
+
+Nonlinear transforms and additive composition are rejected rather than approximated. This adapter is scoped to the pinned RAMI2D 1.0.2 image-coordinate conventions. Already-registered images and masks keep their reference-grid mapping; their registration is not applied twice.
 
 Schema/grid validation and successful process exit do not establish biological alignment. RAMI2D provenance records `alignment_quality: not_assessed`. Float32 spectral data, nonlinear transforms and real MSI data are not validated by this prototype.
 
@@ -95,7 +97,7 @@ Diagnostic tissue-toy results (no acceptance threshold or biological accuracy cl
 
 Image differences use the inner crop excluding 40-pixel borders. These values show partial recovery, not exact displacement recovery. The source H&E was already registered and may retain baseline misalignment. Neither tool was optimized or modified to improve these scores. Visual review remains necessary.
 
-Not tested: original raw-cycle processing, full-size segmentation, real MSI/float32 data, nonlinear registration, or native RAMI2D-to-NGFF transform conversion. The rigid-plus-affine option is wired to upstream but the local registration tests used rigid mode.
+Not tested: original raw-cycle processing, full-size segmentation, real MSI/float32 data, nonlinear registration. The rigid-plus-affine option is wired to upstream but the local registration tests used rigid mode.
 
 ## References
 

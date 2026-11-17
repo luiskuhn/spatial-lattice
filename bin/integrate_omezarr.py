@@ -6,6 +6,7 @@ from importlib.metadata import version
 from pathlib import Path
 from contextlib import ExitStack
 import numpy as np
+from rami2d_rfc5 import scene_mapping
 import dask.array as da
 import tifffile, zarr, ngff_zarr as ng
 from ome_types import from_xml
@@ -87,7 +88,7 @@ def export(a):
         mac, axes, mp, mx = read(stack, a.macsima)
         mask, la, _, _ = read(stack, a.mask)
         he, ha, hp, hx = read(stack, a.hne)
-        _, _, npix, nx = read(stack, a.native_hne)
+        native_he, _, npix, nx = read(stack, a.native_hne)
         px = spacing(mp)
         npx = spacing(npix)
         assert np.allclose(px, px[0]) and np.allclose(npx, npx[0]), (
@@ -148,8 +149,7 @@ def export(a):
             )
         ]
         small = None
-        # RAMI2D native coordinates are provenance only until its transform adapter
-        # is validated. Do not add disconnected coordinates or an invented edge.
+        rami_mapping = None
         if a.backend == 'stainwarpy':
             systems.extend([
                 CoordinateSystem("hne_native_pixels", [Axis("y", "space"), Axis("x", "space")]),
@@ -185,6 +185,18 @@ def export(a):
                     ).tolist(),
                 )
             )
+        else:
+            rami_mapping = scene_mapping(a.transform, mac.shape[-2:], px, native_he.shape[-2:], npx)
+            systems.extend([
+                CoordinateSystem("hne_native_pixels", [Axis("y", "space"), Axis("x", "space")]),
+                CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")]),
+            ])
+            edges.extend([
+                Affine(input=Ref(name="hne_native_pixels"), output=Ref(name="hne_native_physical"),
+                       affine=[[float(npx[0]), 0, 0], [0, float(npx[1]), 0]]),
+                Affine(input=Ref(name="hne_native_physical"), output=Ref(name="macsima_physical"),
+                       affine=rami_mapping['moving_physical_to_reference_physical_yx']),
+            ])
         ng.to_ngff_zarr(
             out,
             ng.NgffScene(images, edges, systems),
@@ -203,21 +215,26 @@ def export(a):
             label_metadata = dict(label_group.attrs['ome'])
             label_metadata['image-label'] = {'version': '0.6', 'source': {'image': '../../'}}
             label_group.attrs['ome'] = label_metadata
-        # Keep backend-native transforms without inventing a scene edge for ITK maps.
+        # Retain native transforms alongside the standardized scene mapping.
         provenance = out / 'provenance'
         provenance.mkdir()
         shutil.copyfile(a.transform, provenance / Path(a.transform).name)
         shutil.copyfile(a.metrics, provenance / Path(a.metrics).name)
+        registration_metrics = json.load(open(a.metrics))
+        if rami_mapping is not None:
+            (provenance / 'rami2d_rfc5.json').write_text(json.dumps(rami_mapping, indent=2) + '\n')
+            registration_metrics = dict(registration_metrics, ngff_native_transform_conversion='linear_affine')
         root.attrs["spatial_lattice"] = {
             "adapter": a.backend + '-fixed-and-final-multiplexed',
             "native_transform_file": 'provenance/' + Path(a.transform).name,
-            "native_transform_scene_edge": a.backend == 'stainwarpy',
+            "native_transform_scene_edge": True,
+            "rami2d_rfc5_mapping": rami_mapping,
             "alignment_quality": "not_assessed",
             "native_hne_spacing_um": npx.tolist(),
             "registration_shape_yx": small.tolist() if small is not None else None,
             "source_ome_xml": {"macsima": mx, "hne_native": nx, "hne_registered": hx},
             "markers": markers,
-            "registration_metrics": json.load(open(a.metrics)),
+            "registration_metrics": registration_metrics,
             "software": {
                 name: version(name)
                 for name in ("ngff-zarr", "zarr", "tifffile", "dask")
