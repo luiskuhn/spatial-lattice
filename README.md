@@ -63,7 +63,7 @@ Stainwarpy is the default. For RAMI2D use `--registration_backend rami2d` and pr
 
 The required OME-Zarr contains MACSima, its Cellpose labels, registered H&E, optional transformed moving labels, physical calibration, RFC-5 transformations and native provenance. MultiQC is written under `multiqc/`. See [OME-Zarr output](docs/integrated_omezarr.md) and [RAMI2D mapping](docs/rami2d_rfc5.md).
 
-The three subworkflows are implemented and tested on synthetic and tissue-derived examples. Workflow wiring tests cover two ROIs and both backends. Full original-data processing remains pending. Successful execution and valid metadata do not establish biological registration accuracy.
+The three subworkflows are implemented and tested on synthetic and tissue-derived examples. Workflow wiring tests cover two ROIs and both backends. Both backends have also completed on the original full MACSima ROI and H&E on solidfox (2026-11-17), with H&E segmentation disabled. RAMI2D used a verified lossless RGB-layout copy of the H&E input. Full-data moving-mask validation remains pending. Successful execution and valid metadata do not establish biological registration accuracy.
 
 ## Development backlog
 
@@ -78,6 +78,16 @@ The blocks shown in the [metro map](docs/images/metromap.svg) are implemented fo
 Both spatial integration paths should feed the required **BUILD_INTEGRATED_OMEZARR** subworkflow before MultiQC. For this milestone, supported spatial annotations are **segmentation masks only**. Masks already in the reference frame should retain that frame; moving-image masks should use the corresponding image transform with label-preserving interpolation. Vector ROI support is deferred and must not block these three subworkflows.
 
 The [shared registration contract](docs/prototype_registration.md), [RAMI2D design notes](docs/rami2d_prototype.md) and [OME-Zarr integration documentation](docs/integrated_omezarr.md) provide background. This scope decision supersedes any earlier suggestion in those design notes to reuse inherited RAMI2D modules or implement vector annotations during the first prototype.
+
+### TODO: H&E segmentation and spatial annotation transformations
+
+The full-data comparison on solidfox (2026-11-17) used `stainsegmy: false` for both backends. Its OME-Zarr artifacts contain MACSima Cellpose labels only; they do **not** validate transformation of real H&E segmentation masks. Earlier synthetic moving-mask tests cover basic wiring and label handling, but are not a substitute for this test.
+
+- [ ] **Test `stainsegmy` end to end on the full H&E input**, with both Stainwarpy and RAMI2D: segmentation, transformation into the MACSima reference frame, OME-Zarr export and napari inspection. Record input layout/calibration, parameters, container versions and QC results.
+- [ ] **Review and complete segmentation-mask transformation support across both backends.** Reuse the corresponding image transform; verify transform direction/composition, axis order, pixel centres, physical spacing, crop offsets and output grid. Use label-preserving interpolation, preserve integer IDs, document clipping/out-of-bounds behaviour, and ensure reference-frame Cellpose masks are not transformed again. Check image/mask landmark agreement and label integrity on known transforms and real tissue.
+- [ ] **Extend transformation support to spatial objects later**, including points, circles/ellipses and polygons. Define a shared annotation contract and preserve object IDs, properties, source coordinates and provenance. Follow the [deferred OME ROI work plan](#deferred-ome-roi-objects-and-vector-spatial-annotations); vector support is not implemented by the current image/mask adapters.
+
+**Visual review note:** the user judged both full-data image registrations acceptable for this milestone, with Stainwarpy showing better fine-grained alignment than RAMI2D. This is qualitative feedback, not a quantitative accuracy benchmark or validation of annotation transformations. Registration optimization is outside this TODO.
 
 ### Deferred: OME ROI objects and vector spatial annotations
 
