@@ -259,7 +259,7 @@ def export(a):
             edges.append(
                 Affine(input=Ref(name="hne_native_physical"), output=Ref(name="macsima_physical"),
                        affine=rami_mapping['moving_physical_to_reference_physical_yx']),
-            ])
+            )
         ng.to_ngff_zarr(
             out,
             ng.NgffScene(images, edges, systems),
