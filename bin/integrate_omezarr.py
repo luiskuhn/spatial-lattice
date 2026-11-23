@@ -59,6 +59,7 @@ def checksum(path):
 def validate(path):
     scene = ng.NgffScene.from_ome_zarr(str(path), validate=True)
     shapes = {k: list(v.images[0].data.shape) for k, v in scene.images.items()}
+    assert "hne_native" in shapes, "Native moving image layer is missing"
     assert (
         shapes["macsima"][-2:]
         == shapes["hne_registered"][-2:]
@@ -88,12 +89,18 @@ def export(a):
         mac, axes, mp, mx = read(stack, a.macsima)
         mask, la, _, _ = read(stack, a.mask)
         he, ha, hp, hx = read(stack, a.hne)
-        native_he, _, npix, nx = read(stack, a.native_hne)
+        native_he, native_axes, npix, nx = read(stack, a.native_hne)
         px = spacing(mp)
         npx = spacing(npix)
         assert np.allclose(px, px[0]) and np.allclose(npx, npx[0]), (
             "Anisotropic inputs unsupported by this adapter"
         )
+        assert native_axes in ("cyx", "yx"), "Unsupported native moving-image axes"
+        if np.any(npx < px):
+            raise ValueError(
+                "MACSima must be the highest-resolution input (its micrometers-per-pixel "
+                "must be less than or equal to the native moving-image calibration)"
+            )
         assert mac.shape[-2:] == mask.shape == he.shape[-2:], "Reference grids disagree"
         assert np.allclose(px, spacing(hp)) and la == "yx" and mask.dtype.kind in "ui"
         markers = list(csv.DictReader(open(a.markers)))
@@ -142,6 +149,33 @@ def export(a):
                     affine=matrix,
                 )
             )
+        # Retain the original moving-image pixels at their calibrated native scale.
+        # "hne_registered" remains the convenience raster resampled onto the MACSima grid.
+        if native_axes == "cyx":
+            channel_count = native_he.shape[0]
+            ome_channels = list(npix.channels or [])
+            native_channel_names = [channel.name or f"channel_{i}" for i, channel in enumerate(ome_channels)]
+            if channel_count == 3:
+                native_channel_names = ["Red", "Green", "Blue"]
+            elif len(native_channel_names) != channel_count:
+                native_channel_names = [f"channel_{i}" for i in range(channel_count)]
+        else:
+            native_channel_names = None
+        native_image = ng.to_ngff_image(
+            native_he,
+            dims=tuple(native_axes),
+            name="native",
+            scale=dict(zip("yx", npx)),
+            axes_units={"y": "micrometer", "x": "micrometer"},
+            channel_names=native_channel_names,
+        )
+        images["hne_native"] = ng.to_multiscales(
+            native_image,
+            scale_factors=[2, 4, 8],
+            method=ng.Methods.DASK_IMAGE_GAUSSIAN,
+            chunks={d: 1 if d == "c" else 512 for d in native_axes},
+        )
+
         systems = [
             CoordinateSystem(
                 "macsima_physical",
@@ -156,6 +190,16 @@ def export(a):
                 CoordinateSystem("registration_pixels", [Axis("y", "space"), Axis("x", "space")]),
                 CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")]),
             ])
+            native_to_pixels = (
+                [[0, 1, 0, 0], [0, 0, 1, 0]]
+                if native_axes == "cyx"
+                else [[1, 0, 0], [0, 1, 0]]
+            )
+            edges.append(Affine(
+                input=Ref(path="hne_native", name="intrinsic"),
+                output=Ref(name="hne_native_pixels"),
+                affine=native_to_pixels,
+            ))
             edges.append(Affine(
                 input=Ref(name="hne_native_pixels"), output=Ref(name="hne_native_physical"),
                 affine=[[float(npx[0]), 0, 0], [0, float(npx[1]), 0]],
@@ -191,6 +235,16 @@ def export(a):
                 CoordinateSystem("hne_native_pixels", [Axis("y", "space"), Axis("x", "space")]),
                 CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")]),
             ])
+            native_to_pixels = (
+                [[0, 1, 0, 0], [0, 0, 1, 0]]
+                if native_axes == "cyx"
+                else [[1, 0, 0], [0, 1, 0]]
+            )
+            edges.append(Affine(
+                input=Ref(path="hne_native", name="intrinsic"),
+                output=Ref(name="hne_native_pixels"),
+                affine=native_to_pixels,
+            ))
             edges.extend([
                 Affine(input=Ref(name="hne_native_pixels"), output=Ref(name="hne_native_physical"),
                        affine=[[float(npx[0]), 0, 0], [0, float(npx[1]), 0]]),
@@ -231,6 +285,10 @@ def export(a):
             "rami2d_rfc5_mapping": rami_mapping,
             "alignment_quality": "not_assessed",
             "native_hne_spacing_um": npx.tolist(),
+            "native_hne_shape_yx": list(native_he.shape[-2:]),
+            "native_hne_pixels_preserved": True,
+            "registered_hne_resampled_to_macsima_grid": True,
+            "macsima_reference_spacing_um": px.tolist(),
             "registration_shape_yx": small.tolist() if small is not None else None,
             "source_ome_xml": {"macsima": mx, "hne_native": nx, "hne_registered": hx},
             "markers": markers,
