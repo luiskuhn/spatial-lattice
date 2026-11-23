@@ -43,8 +43,10 @@ with ExitStack() as stack:
                 slice(y, min(y + tile, source.shape[-2])),
                 slice(x, min(x + tile, source.shape[-1])),
             )
-            expected = source[selection].compute()
-            actual = native_layer[selection].compute()
+            expected_tile = source[selection]
+            actual_tile = native_layer[selection]
+            expected = expected_tile.compute() if hasattr(expected_tile, "compute") else np.asarray(expected_tile)
+            actual = actual_tile.compute() if hasattr(actual_tile, "compute") else np.asarray(actual_tile)
             np.testing.assert_array_equal(actual, expected)
 
 edges = scene.coordinateTransformations
