@@ -60,6 +60,18 @@ def validate(path):
     scene = ng.NgffScene.from_ome_zarr(str(path), validate=True)
     shapes = {k: list(v.images[0].data.shape) for k, v in scene.images.items()}
     assert "hne_native" in shapes, "Native moving image layer is missing"
+    root = zarr.open_group(str(path), mode="r")
+    provenance = root.attrs["spatial_lattice"]
+    assert provenance.get("native_hne_pixels_preserved") is True
+    assert shapes["hne_native"][-2:] == provenance["native_hne_shape_yx"]
+    assert np.allclose(
+        provenance["macsima_reference_spacing_um"],
+        provenance["macsima_reference_spacing_um"][0],
+    )
+    assert np.all(
+        np.asarray(provenance["macsima_reference_spacing_um"])
+        <= np.asarray(provenance["native_hne_spacing_um"])
+    ), "MACSima must be the highest-resolution input"
     assert (
         shapes["macsima"][-2:]
         == shapes["hne_registered"][-2:]
