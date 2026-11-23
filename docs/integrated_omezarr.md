@@ -32,11 +32,12 @@ Each acquisition produces `<acquisition_id>.ome.zarr`:
 | --- | --- |
 | `macsima` | ASHLAR reference image, with marker names |
 | `macsima/labels/cellpose` | Reference Cellpose labels; not transformed |
-| `hne_registered` | RGB H&E resampled onto the reference grid |
+| `hne_native` | Original moving image pixels at the source OME calibration, positioned in the MACSima scene by the selected registration transform |
+| `hne_registered` | Registered RGB H&E resampled onto the MACSima reference grid for direct pixelwise display |
 | `hne_registered/labels/segmentation` | Optional moving labels transformed by the chosen backend |
 | `provenance/` | Native registration transforms and metrics; RAMI2D's resolved RFC-5 mapping JSON |
 
-Four pyramid levels are written. Image pyramids use Gaussian downsampling and labels use nearest-neighbour downsampling. Physical calibration comes from the source OME metadata; image and label grids are checked before export. Source checksums, original OME XML, marker information and software versions are retained in root provenance metadata.
+Four pyramid levels are written. Image pyramids use Gaussian downsampling and labels use nearest-neighbour downsampling. Scale 0 of `hne_native` retains the source pixel array without registration resampling; its OME pixel calibration is preserved, and its RFC-5 scene transform places it in the MACSima physical coordinate system. `hne_registered` is a derived display layer resampled onto the MACSima grid. MACSima is the canonical reference, and the exporter checks that its pixel size is at least as fine as the moving image calibration. Physical calibration comes from source OME metadata; image and label grids are checked before export. Source checksums, original OME XML, marker information and software versions are retained in root provenance metadata.
 
 In the tissue toy, the moving `segmentation` layer is a deliberately shifted copy of the reference labels, not an independent H&E segmentation. Use `cellpose` for the original MACSima cell annotations.
 
