@@ -22,6 +22,18 @@ nextflow -C tests/prototype/rami2d.config run tests/prototype/rami2d.nf \
 
 This tests image registration, a moving label mask, absence of moving labels, native transform archiving and validated OME-Zarr output. It uses synthetic image patterns and reference labels, not Cellpose. The fixture is intentionally small. Default output: `testing/prototype-rami2d/`.
 
+## Native-resolution preservation check
+
+After a real or synthetic run, compare the source moving image against the retained native layer:
+
+```bash
+python tests/prototype/check_native_resolution.py \
+  testing/prototype-rami2d/with_mask.ome.zarr \
+  testing/prototype-images/moving.ome.tif
+```
+
+The check compares every scale-0 pixel in bounded tiles, confirms the original dtype and OME pixel calibration, and verifies that the native layer is connected to the RFC-5 physical scene transform. The registered layer remains a convenience raster on the MACSima grid.
+
 ## Tissue-derived toy pair
 
 Mount the source OME-Zarr and a new destination directory into the exporter container. For example, with both under the repository's ignored `testing/` directory:
