@@ -190,19 +190,19 @@ def export(a):
                 CoordinateSystem("registration_pixels", [Axis("y", "space"), Axis("x", "space")]),
                 CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")]),
             ])
-            native_to_pixels = (
+            native_to_physical = (
                 [[0, 1, 0, 0], [0, 0, 1, 0]]
                 if native_axes == "cyx"
                 else [[1, 0, 0], [0, 1, 0]]
             )
             edges.append(Affine(
                 input=Ref(path="hne_native", name="intrinsic"),
-                output=Ref(name="hne_native_pixels"),
-                affine=native_to_pixels,
+                output=Ref(name="hne_native_physical"),
+                affine=native_to_physical,
             ))
             edges.append(Affine(
-                input=Ref(name="hne_native_pixels"), output=Ref(name="hne_native_physical"),
-                affine=[[float(npx[0]), 0, 0], [0, float(npx[1]), 0]],
+                input=Ref(name="hne_native_physical"), output=Ref(name="hne_native_pixels"),
+                affine=[[1.0 / float(npx[0]), 0, 0], [0, 1.0 / float(npx[1]), 0]],
             ))
             m = np.load(a.transform, allow_pickle=False)
             assert m.shape == (3, 3) and np.allclose(m[2], [0, 0, 1]), (
@@ -231,23 +231,20 @@ def export(a):
             )
         else:
             rami_mapping = scene_mapping(a.transform, mac.shape[-2:], px, native_he.shape[-2:], npx)
-            systems.extend([
-                CoordinateSystem("hne_native_pixels", [Axis("y", "space"), Axis("x", "space")]),
-                CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")]),
-            ])
-            native_to_pixels = (
+            systems.append(
+                CoordinateSystem("hne_native_physical", [Axis("y", "space", "micrometer"), Axis("x", "space", "micrometer")])
+            )
+            native_to_physical = (
                 [[0, 1, 0, 0], [0, 0, 1, 0]]
                 if native_axes == "cyx"
                 else [[1, 0, 0], [0, 1, 0]]
             )
             edges.append(Affine(
                 input=Ref(path="hne_native", name="intrinsic"),
-                output=Ref(name="hne_native_pixels"),
-                affine=native_to_pixels,
+                output=Ref(name="hne_native_physical"),
+                affine=native_to_physical,
             ))
-            edges.extend([
-                Affine(input=Ref(name="hne_native_pixels"), output=Ref(name="hne_native_physical"),
-                       affine=[[float(npx[0]), 0, 0], [0, float(npx[1]), 0]]),
+            edges.append(
                 Affine(input=Ref(name="hne_native_physical"), output=Ref(name="macsima_physical"),
                        affine=rami_mapping['moving_physical_to_reference_physical_yx']),
             ])
